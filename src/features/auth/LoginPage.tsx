@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { ensureUserExists } from "../lib/user";
+import { useAuth } from "./AuthContext";
+import { ensureUserExists } from "./user";
 
 export function LoginPage() {
   const { user, login, loading } = useAuth();

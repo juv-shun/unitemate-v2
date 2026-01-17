@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
-import { getUserProfile, updateDisplayName } from "../lib/user";
+import { useAuth } from "../auth/AuthContext";
+import { getUserProfile, updateDisplayName } from "../auth/user";
 
 export function HomePage() {
   const { user, logout } = useAuth();
@@ -11,7 +11,7 @@ export function HomePage() {
   useEffect(() => {
     if (user) {
       getUserProfile(user.uid).then((data) => {
-        if (data) {
+        if (data?.display_name) {
           setDisplayName(data.display_name);
         }
         setProfileLoading(false);

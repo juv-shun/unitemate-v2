@@ -6,9 +6,9 @@ import {
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 
-export async function ensureUserExists(user: User) {
+export async function ensureUserExists(user: User): Promise<void> {
   if (!user) return;
 
   const userRef = doc(db, "users", user.uid);
@@ -25,7 +25,10 @@ export async function ensureUserExists(user: User) {
   }
 }
 
-export async function updateDisplayName(uid: string, name: string) {
+export async function updateDisplayName(
+  uid: string,
+  name: string,
+): Promise<void> {
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     display_name: name,
@@ -33,11 +36,13 @@ export async function updateDisplayName(uid: string, name: string) {
   });
 }
 
-export async function getUserProfile(uid: string) {
+export async function getUserProfile(
+  uid: string,
+): Promise<{ display_name?: string } | null> {
   const userRef = doc(db, "users", uid);
   const userSnap = await getDoc(userRef);
   if (userSnap.exists()) {
-    return userSnap.data();
+    return userSnap.data() as { display_name?: string };
   }
   return null;
 }
