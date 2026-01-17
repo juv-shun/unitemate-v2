@@ -13,6 +13,7 @@ import {
   useState,
 } from "react";
 import { auth } from "../../firebase";
+import { cancelQueue } from "../queue/queue";
 
 interface AuthContextType {
   user: User | null;
@@ -41,6 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
+    if (user) {
+      await cancelQueue(user.uid);
+    }
     await signOut(auth);
   };
 
