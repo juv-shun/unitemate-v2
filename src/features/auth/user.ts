@@ -51,11 +51,17 @@ export async function updateDisplayName(
 
 export async function getUserProfile(
 	uid: string,
-): Promise<{ display_name?: string; is_onboarded?: boolean } | null> {
+): Promise<
+	{ display_name?: string; is_onboarded?: boolean; photo_url?: string } | null
+> {
 	const userRef = doc(db, "users", uid);
 	const userSnap = await getDoc(userRef);
 	if (userSnap.exists()) {
-		return userSnap.data() as { display_name?: string; is_onboarded?: boolean };
+		return userSnap.data() as {
+			display_name?: string;
+			is_onboarded?: boolean;
+			photo_url?: string;
+		};
 	}
 	return null;
 }

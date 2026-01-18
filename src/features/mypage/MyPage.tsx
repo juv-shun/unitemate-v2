@@ -5,6 +5,7 @@ import { getUserProfile, updateDisplayName } from "../auth/user";
 export function MyPage() {
 	const { user } = useAuth();
 	const [displayName, setDisplayName] = useState("");
+	const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 	const [isEditing, setIsEditing] = useState(false);
 	const [loading, setLoading] = useState(true);
 
@@ -14,6 +15,7 @@ export function MyPage() {
 				if (data?.display_name) {
 					setDisplayName(data.display_name);
 				}
+				setPhotoUrl(data?.photo_url ?? null);
 				setLoading(false);
 			});
 		}
@@ -85,17 +87,28 @@ export function MyPage() {
 
 					<div className="flex items-center gap-4">
 						{/* アバター */}
-						<div
-							className="w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold shrink-0"
-							style={{
-								backgroundColor: "var(--color-surface-elevated)",
-								fontFamily: "var(--font-display)",
-								color: "var(--color-accent-amber)",
-								border: "1px solid rgba(245, 158, 11, 0.3)",
-							}}
-						>
-							{displayName.charAt(0).toUpperCase()}
-						</div>
+						{photoUrl ? (
+							<img
+								src={photoUrl}
+								alt={displayName || "User"}
+								className="w-14 h-14 rounded-lg object-cover shrink-0"
+								style={{
+									border: "1px solid rgba(245, 158, 11, 0.3)",
+								}}
+							/>
+						) : (
+							<div
+								className="w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold shrink-0"
+								style={{
+									backgroundColor: "var(--color-surface-elevated)",
+									fontFamily: "var(--font-display)",
+									color: "var(--color-accent-amber)",
+									border: "1px solid rgba(245, 158, 11, 0.3)",
+								}}
+							>
+								{displayName.charAt(0).toUpperCase()}
+							</div>
+						)}
 
 						{/* ユーザー情報 */}
 						<div className="flex-1 min-w-0">
