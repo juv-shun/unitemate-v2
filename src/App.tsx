@@ -8,6 +8,8 @@ import { MyPage } from "./features/mypage/MyPage";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
 import { QueueProvider } from "./features/queue/QueueContext";
+import { RankingPage } from "./features/ranking/RankingPage";
+import { StatsPage } from "./features/stats/StatsPage";
 
 function App() {
 	return (
@@ -50,6 +52,26 @@ function App() {
 								<ProtectedRoute>
 									<Layout>
 										<MyPage />
+									</Layout>
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path="/ranking"
+							element={
+								<ProtectedRoute>
+									<Layout>
+										<RankingPage />
+									</Layout>
+								</ProtectedRoute>
+							}
+						/>
+						<Route
+							path="/stats"
+							element={
+								<ProtectedRoute>
+									<Layout>
+										<StatsPage />
 									</Layout>
 								</ProtectedRoute>
 							}

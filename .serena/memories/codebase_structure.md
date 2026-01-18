@@ -32,23 +32,33 @@ unitemate-v2/
 ```
 src/
 ├── components/                    # 再利用可能なコンポーネント
-│   └── ProtectedRoute.tsx         # 認証・オンボーディング状態に基づくルート保護
+│   ├── ProtectedRoute.tsx         # 認証・オンボーディング状態に基づくルート保護
+│   ├── Layout.tsx                 # サイドバー付きレイアウト（認証済みページ用）
+│   └── Sidebar.tsx                # サイドメニュー（ナビゲーション・ログアウト）
 ├── features/                      # 機能別モジュール
 │   ├── auth/                      # 認証機能
 │   │   ├── AuthContext.tsx        # 認証状態管理（Google OAuth）
 │   │   ├── LoginPage.tsx          # ログインページ
 │   │   └── user.ts                # ユーザー関連Firestore操作
+│   ├── draft/                     # ドラフトシミュレーション機能
+│   │   └── DraftSimulationPage.tsx # ドラフトページ（Coming Soon）
+│   ├── mypage/                    # マイページ機能
+│   │   └── MyPage.tsx             # プロフィール編集ページ
 │   ├── onboarding/                # オンボーディング機能
 │   │   └── OnboardingPage.tsx     # 初回ユーザー名入力ページ
-│   ├── profile/                   # プロフィール機能
-│   │   └── HomePage.tsx           # ホームページ（プロフィール・マッチング表示）
-│   └── queue/                     # キュー・マッチング機能
-│       ├── QueueContext.tsx       # キュー状態管理
-│       ├── queue.ts               # キュー関連Firestore操作
-│       ├── types.ts               # キュー型定義
-│       └── components/
-│           ├── QueueSection.tsx       # キューUIコンポーネント
-│           └── SearchingIndicator.tsx # 検索インジケーター
+│   ├── profile/                   # マッチング機能
+│   │   └── HomePage.tsx           # マッチングページ（QueueSection表示）
+│   ├── queue/                     # キュー・マッチング機能
+│   │   ├── QueueContext.tsx       # キュー状態管理
+│   │   ├── queue.ts               # キュー関連Firestore操作
+│   │   ├── types.ts               # キュー型定義
+│   │   └── components/
+│   │       ├── QueueSection.tsx       # キューUIコンポーネント
+│   │       └── SearchingIndicator.tsx # 検索インジケーター
+│   ├── ranking/                   # ランキング機能
+│   │   └── RankingPage.tsx        # ランキングページ（Coming Soon）
+│   └── stats/                     # 統計機能
+│       └── StatsPage.tsx          # 統計ページ（Coming Soon）
 ├── assets/                        # 静的アセット
 │   └── react.svg                  # Reactロゴ
 ├── App.tsx                        # ルートコンポーネント（ルーティング設定）
@@ -64,9 +74,20 @@ src/
 - `src/main.tsx`: Reactアプリのエントリポイント
 
 ### ルーティング（src/App.tsx）
-- `/login`: ログインページ（LoginPage）
-- `/onboarding`: 初回ユーザー名入力ページ（OnboardingPage）- 認証必須
-- `/`: ホームページ（HomePage）- 認証必須
+- `/login`: ログインページ（LoginPage）- Layoutなし
+- `/onboarding`: 初回ユーザー名入力ページ（OnboardingPage）- 認証必須、Layoutなし
+- `/`: マッチングページ（HomePage）- 認証必須、Layout付き
+- `/draft`: ドラフトシミュレーション（DraftSimulationPage）- 認証必須、Layout付き
+- `/ranking`: ランキング（RankingPage）- 認証必須、Layout付き
+- `/stats`: 統計（StatsPage）- 認証必須、Layout付き
+- `/mypage`: マイページ（MyPage）- 認証必須、Layout付き
+
+### レイアウト構造
+- `Layout.tsx`: サイドバー + メインコンテンツのフレックスレイアウト
+  - デスクトップ（lg以上）: サイドバー常時表示
+  - モバイル（lg未満）: ハンバーガーメニュー + スライドインサイドバー
+- `Sidebar.tsx`: ナビゲーションメニュー + ログアウトボタン
+  - メニュー項目: マッチング、ドラフトシミュレーション、ランキング、統計、マイページ
 
 ### 認証・ユーザー管理
 - `src/features/auth/AuthContext.tsx`: 認証状態管理（Google OAuth）
@@ -82,6 +103,11 @@ src/
 - `src/features/onboarding/OnboardingPage.tsx`: 初回ユーザー名入力ページ
   - ゲーム内ユーザー名との一致を促す注意書き表示
   - 2-20文字のバリデーション
+
+### マイページ
+- `src/features/mypage/MyPage.tsx`: プロフィール編集ページ
+  - 表示名の編集機能
+  - ユーザー情報表示（アバター、メール）
 
 ### キュー・マッチング機能
 - `src/features/queue/QueueContext.tsx`: キュー状態管理
