@@ -28,6 +28,13 @@ export async function ensureUserExists(
 		return { isNewUser: true };
 	}
 
+	if (user.photoURL) {
+		await updateDoc(userRef, {
+			photo_url: user.photoURL,
+			updated_at: serverTimestamp(),
+		});
+	}
+
 	return { isNewUser: false };
 }
 
