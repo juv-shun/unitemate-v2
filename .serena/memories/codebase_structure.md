@@ -3,7 +3,10 @@
 ## プロジェクトルート
 ```
 unitemate-v2/
-├── src/                    # ソースコード
+├── src/                    # フロントエンドソースコード
+├── functions/              # Firebase Functions（バックエンド）
+│   └── src/
+│       └── index.ts        # マッチング処理（フェーズ1.3実装）
 ├── public/                 # 静的ファイル
 ├── docs/                   # ドキュメント（要件定義書等）
 ├── dist/                   # ビルド出力（gitignore対象）
@@ -40,8 +43,12 @@ src/
 │   │   ├── AuthContext.tsx        # 認証状態管理（Google OAuth）
 │   │   ├── LoginPage.tsx          # ログインページ
 │   │   └── user.ts                # ユーザー関連Firestore操作
-│   ├── draft/                     # ドラフトシミュレーション機能
-│   │   └── DraftSimulationPage.tsx # ドラフトページ（Coming Soon）
+│   ├── draft/                     # ドラフト・マッチ機能
+│   │   ├── DraftSimulationPage.tsx # ドラフトページ
+│   │   ├── MatchContext.tsx       # マッチ状態管理（リアルタイム購読）
+│   │   ├── match.ts               # マッチ関連Firestore操作
+│   │   ├── types.ts               # 型定義（Match, Member, DraftSession等）
+│   │   └── components/            # ドラフト関連コンポーネント
 │   ├── mypage/                    # マイページ機能
 │   │   └── MyPage.tsx             # プロフィール編集ページ
 │   ├── onboarding/                # オンボーディング機能
@@ -77,7 +84,8 @@ src/
 - `/login`: ログインページ（LoginPage）- Layoutなし
 - `/onboarding`: 初回ユーザー名入力ページ（OnboardingPage）- 認証必須、Layoutなし
 - `/`: マッチングページ（HomePage）- 認証必須、Layout付き
-- `/draft`: ドラフトシミュレーション（DraftSimulationPage）- 認証必須、Layout付き
+- `/draft/:matchId?`: ドラフトシミュレーション（DraftSimulationPage）- 認証必須、Layout付き
+- `/match/:matchId?`: マッチ成立画面（MatchResultPage）- 認証必須、Layout付き（フェーズ1.3で追加）
 - `/ranking`: ランキング（RankingPage）- 認証必須、Layout付き
 - `/stats`: 統計（StatsPage）- 認証必須、Layout付き
 - `/mypage`: マイページ（MyPage）- 認証必須、Layout付き
@@ -111,12 +119,30 @@ src/
 
 ### キュー・マッチング機能
 - `src/features/queue/QueueContext.tsx`: キュー状態管理
+  - `matchedMatchId`状態を追加（フェーズ1.3）
 - `src/features/queue/queue.ts`: キュー関連Firestore操作
+  - `subscribeToQueueStatus`: `matched_match_id`フィールド対応（フェーズ1.3）
 - `src/features/queue/components/QueueSection.tsx`: キューUIコンポーネント
+
+### マッチ機能（フェーズ1.3実装済み）
+- `src/features/match/MatchResultPage.tsx`: マッチ成立画面（P1-03）
+  - マッチID表示、ドラフトページへの遷移
+  - `MatchContext`および`QueueContext`を使用
 
 ### Firebase
 - `src/firebase.ts`: Firebase SDK初期化（Auth, Firestore）
 - 開発環境ではエミュレータに接続
+
+### Firebase Functions（バックエンド）
+- `functions/src/index.ts`: Cloud Functions実装（フェーズ1.3）
+  - **runMatchmaking**: 1分間隔の定期実行関数
+    - 待機ユーザーから10人抽選してマッチ作成
+    - トランザクションで競合回避
+  - **runMatchmakingManual**: 手動実行用HTTP関数（開発・テスト用）
+  - 環境変数:
+    - `MATCHING_MIN_QUEUE`: 最小キュー人数（デフォルト: 30）
+    - `MATCHING_MAX_WAIT_SEC`: 最大待機時間秒（デフォルト: 180）
+    - `MATCHING_CANDIDATE_LIMIT`: 候補取得上限（デフォルト: 50）
 
 ### スタイリング
 - `src/index.css`: グローバルスタイル
@@ -138,10 +164,32 @@ src/
 | `email` | string | メールアドレス |
 | `photo_url` | string | プロフィール画像URL |
 | `is_onboarded` | boolean | オンボーディング完了フラグ |
-| `queue_status` | string \| null | "waiting" または null |
+| `queue_status` | string \| null | "waiting" / "matched" / null |
 | `queue_joined_at` | timestamp \| null | キュー参加時刻 |
+| `matched_match_id` | string \| null | マッチID参照（フェーズ1.3実装済み） |
 | `created_at` | timestamp | 作成日時 |
 | `updated_at` | timestamp | 更新日時 |
+
+### matchesコレクション（フェーズ1.3実装済み）
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `phase` | string | "phase1"（フェーズ識別） |
+| `source_type` | string | "auto"（自動マッチング） |
+| `status` | string | "draft_pending"（ドラフト待機中） |
+| `capacity` | number | 10（定員） |
+| `auto_start` | boolean | true（自動開始フラグ） |
+| `first_team` | string | "first" / "second"（先攻側チーム） |
+| `created_at` | timestamp | 作成日時 |
+| `updated_at` | timestamp | 更新日時 |
+
+### matches/{matchId}/membersサブコレクション（フェーズ1.3実装済み）
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `user_id` | string | ユーザーID |
+| `role` | string | "participant"（参加者） |
+| `team` | string | "first" / "second" |
+| `seat_no` | number | 1-5（チーム内の座席番号） |
+| `joined_at` | timestamp | 参加日時 |
 
 ## ビルド出力
 - `dist/`: 本番用ビルド成果物（Firebase Hostingのpublic）
