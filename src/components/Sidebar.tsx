@@ -129,11 +129,11 @@ const navItems: NavItem[] = [
 		path: "/",
 		icon: <MatchIcon />,
 	},
-	{
-		label: "ドラフトシミュレーション",
-		path: "/draft",
-		icon: <DraftIcon />,
-	},
+	// {
+	// 	label: "ドラフトシミュレーション",
+	// 	path: "/draft",
+	// 	icon: <DraftIcon />,
+	// },
 	{
 		label: "ランキング",
 		path: "/ranking",
