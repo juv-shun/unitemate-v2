@@ -4,6 +4,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./features/auth/AuthContext";
 import { LoginPage } from "./features/auth/LoginPage";
 import { DraftSimulationPage } from "./features/draft/DraftSimulationPage";
+import { MatchProvider } from "./features/draft/MatchContext";
 import { MyPage } from "./features/mypage/MyPage";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
@@ -16,67 +17,69 @@ function App() {
 		<BrowserRouter>
 			<AuthProvider>
 				<QueueProvider>
-					<Routes>
-						<Route path="/login" element={<LoginPage />} />
-						<Route
-							path="/onboarding"
-							element={
-								<ProtectedRoute>
-									<OnboardingPage />
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/"
-							element={
-								<ProtectedRoute>
-									<Layout>
-										<HomePage />
-									</Layout>
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/draft"
-							element={
-								<ProtectedRoute>
-									<Layout>
-										<DraftSimulationPage />
-									</Layout>
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/mypage"
-							element={
-								<ProtectedRoute>
-									<Layout>
-										<MyPage />
-									</Layout>
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/ranking"
-							element={
-								<ProtectedRoute>
-									<Layout>
-										<RankingPage />
-									</Layout>
-								</ProtectedRoute>
-							}
-						/>
-						<Route
-							path="/stats"
-							element={
-								<ProtectedRoute>
-									<Layout>
-										<StatsPage />
-									</Layout>
-								</ProtectedRoute>
-							}
-						/>
-					</Routes>
+					<MatchProvider>
+						<Routes>
+							<Route path="/login" element={<LoginPage />} />
+							<Route
+								path="/onboarding"
+								element={
+									<ProtectedRoute>
+										<OnboardingPage />
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<HomePage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/draft/:matchId?"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<DraftSimulationPage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/mypage"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<MyPage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/ranking"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<RankingPage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/stats"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<StatsPage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+						</Routes>
+					</MatchProvider>
 				</QueueProvider>
 			</AuthProvider>
 		</BrowserRouter>

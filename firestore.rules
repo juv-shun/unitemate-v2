@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ユーザーコレクション
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // matches コレクション
+    match /matches/{matchId} {
+      // 認証済みユーザーは読み取り可能
+      allow read: if request.auth != null;
+
+      // 作成は認証済みユーザーのみ
+      allow create: if request.auth != null
+        && request.resource.data.phase == "phase1"
+        && request.resource.data.source_type == "manual"
+        && request.resource.data.status == "waiting"
+        && request.resource.data.capacity == 10
+        && request.resource.data.auto_start == true;
+
+      // ステータス更新: waiting → draft_pending のみ許可
+      allow update: if request.auth != null
+        && resource.data.status == "waiting"
+        && request.resource.data.status == "draft_pending"
+        && request.resource.data.keys().hasOnly(["status", "updated_at"]);
+
+      // members サブコレクション
+      match /members/{memberId} {
+        allow read: if request.auth != null;
+
+        // 作成は自分のuser_idのみ、memberIdはuser_idと一致必須
+        allow create: if request.auth != null
+          && memberId == request.auth.uid
+          && request.resource.data.user_id == request.auth.uid
+          && request.resource.data.role in ["participant", "spectator"]
+          // マッチがwaiting状態の時のみ参加可能
+          && get(/databases/$(database)/documents/matches/$(matchId)).data.status == "waiting"
+          && (request.resource.data.role == "spectator"
+              || (request.resource.data.team in ["first", "second"]
+                  && request.resource.data.seat_no >= 1
+                  && request.resource.data.seat_no <= 5));
+
+        // 削除は自分のドキュメントのみ
+        allow delete: if request.auth != null
+          && memberId == request.auth.uid
+          && resource.data.user_id == request.auth.uid;
+      }
+    }
+
+    // draft_sessions コレクション
+    match /draft_sessions/{draftId} {
+      // 読み取りは認証済みユーザーのみ
+      allow read: if request.auth != null;
+
+      // 作成は認証済みユーザーのみ（フィールドバリデーション）
+      // match_idで指定されたマッチが存在し、waiting状態であることを確認
+      allow create: if request.auth != null
+        && request.resource.data.source_type == "match"
+        && request.resource.data.status == "waiting"
+        && request.resource.data.match_id is string
+        && exists(/databases/$(database)/documents/matches/$(request.resource.data.match_id))
+        && get(/databases/$(database)/documents/matches/$(request.resource.data.match_id)).data.status == "waiting";
+
+      // 更新は禁止（status変更は将来のフェーズで実装）
+      allow update: if false;
+
+      // turns サブコレクション
+      match /turns/{turnId} {
+        allow read: if request.auth != null;
+        // 作成は認証済みユーザーのみ、親のdraft_sessionが存在することを確認
+        allow create: if request.auth != null
+          && exists(/databases/$(database)/documents/draft_sessions/$(draftId));
+        // 更新・削除は禁止
+        allow update, delete: if false;
+      }
+    }
+  }
+}
