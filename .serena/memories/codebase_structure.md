@@ -31,21 +31,30 @@ unitemate-v2/
 ## src/ディレクトリ詳細
 ```
 src/
-├── components/             # 再利用可能なコンポーネント
-│   └── ProtectedRoute.tsx  # 認証保護ルート
-├── pages/                  # ページコンポーネント
-│   ├── HomePage.tsx        # ホームページ
-│   └── LoginPage.tsx       # ログインページ
-├── contexts/               # React Context
-│   └── AuthContext.tsx     # 認証コンテキスト
-├── lib/                    # ユーティリティ関数
-│   └── user.ts             # ユーザー関連ユーティリティ
-├── assets/                 # 静的アセット
-│   └── react.svg           # Reactロゴ
-├── App.tsx                 # ルートコンポーネント
-├── main.tsx                # エントリポイント
-├── firebase.ts             # Firebase初期化
-└── index.css               # グローバルスタイル
+├── components/                    # 再利用可能なコンポーネント
+│   └── ProtectedRoute.tsx         # 認証・オンボーディング状態に基づくルート保護
+├── features/                      # 機能別モジュール
+│   ├── auth/                      # 認証機能
+│   │   ├── AuthContext.tsx        # 認証状態管理（Google OAuth）
+│   │   ├── LoginPage.tsx          # ログインページ
+│   │   └── user.ts                # ユーザー関連Firestore操作
+│   ├── onboarding/                # オンボーディング機能
+│   │   └── OnboardingPage.tsx     # 初回ユーザー名入力ページ
+│   ├── profile/                   # プロフィール機能
+│   │   └── HomePage.tsx           # ホームページ（プロフィール・マッチング表示）
+│   └── queue/                     # キュー・マッチング機能
+│       ├── QueueContext.tsx       # キュー状態管理
+│       ├── queue.ts               # キュー関連Firestore操作
+│       ├── types.ts               # キュー型定義
+│       └── components/
+│           ├── QueueSection.tsx       # キューUIコンポーネント
+│           └── SearchingIndicator.tsx # 検索インジケーター
+├── assets/                        # 静的アセット
+│   └── react.svg                  # Reactロゴ
+├── App.tsx                        # ルートコンポーネント（ルーティング設定）
+├── main.tsx                       # エントリポイント
+├── firebase.ts                    # Firebase初期化
+└── index.css                      # グローバルスタイル（CSS変数定義）
 ```
 
 ## 主要ファイルの役割
@@ -54,20 +63,59 @@ src/
 - `index.html`: HTMLテンプレート
 - `src/main.tsx`: Reactアプリのエントリポイント
 
-### ルーティング
-- `src/App.tsx`: React Routerによるルーティング設定
+### ルーティング（src/App.tsx）
+- `/login`: ログインページ（LoginPage）
+- `/onboarding`: 初回ユーザー名入力ページ（OnboardingPage）- 認証必須
+- `/`: ホームページ（HomePage）- 認証必須
 
-### 認証
-- `src/contexts/AuthContext.tsx`: 認証状態管理
-- `src/firebase.ts`: Firebase SDK初期化
-- `src/components/ProtectedRoute.tsx`: 認証保護ルート
+### 認証・ユーザー管理
+- `src/features/auth/AuthContext.tsx`: 認証状態管理（Google OAuth）
+- `src/features/auth/LoginPage.tsx`: ログインページ
+- `src/features/auth/user.ts`: ユーザー関連Firestore操作
+  - `ensureUserExists()`: 初回ユーザー作成
+  - `completeOnboarding()`: オンボーディング完了処理
+  - `getUserProfile()`: プロフィール取得
+  - `updateDisplayName()`: 表示名更新
+- `src/components/ProtectedRoute.tsx`: 認証・オンボーディング状態に基づくルート保護
+
+### オンボーディング
+- `src/features/onboarding/OnboardingPage.tsx`: 初回ユーザー名入力ページ
+  - ゲーム内ユーザー名との一致を促す注意書き表示
+  - 2-20文字のバリデーション
+
+### キュー・マッチング機能
+- `src/features/queue/QueueContext.tsx`: キュー状態管理
+- `src/features/queue/queue.ts`: キュー関連Firestore操作
+- `src/features/queue/components/QueueSection.tsx`: キューUIコンポーネント
+
+### Firebase
+- `src/firebase.ts`: Firebase SDK初期化（Auth, Firestore）
+- 開発環境ではエミュレータに接続
+
+### スタイリング
+- `src/index.css`: グローバルスタイル
+  - CSS変数定義（--color-base, --color-surface, --color-accent-cyan等）
+  - フォント設定（Rajdhani, DM Sans）
 
 ### 設定ファイル
 - `vite.config.ts`: Vite設定（React plugin, Tailwind plugin）
 - `biome.json`: Linter/Formatter設定
-- `eslint.config.js`: ESLint設定
 - `tsconfig.*.json`: TypeScript設定（app/node分離）
 - `firebase.json`: Firebase Hosting設定（SPAリライトルール）
+
+## Firestoreスキーマ
+
+### usersコレクション
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `display_name` | string | 表示名（ゲーム内ユーザー名） |
+| `email` | string | メールアドレス |
+| `photo_url` | string | プロフィール画像URL |
+| `is_onboarded` | boolean | オンボーディング完了フラグ |
+| `queue_status` | string \| null | "waiting" または null |
+| `queue_joined_at` | timestamp \| null | キュー参加時刻 |
+| `created_at` | timestamp | 作成日時 |
+| `updated_at` | timestamp | 更新日時 |
 
 ## ビルド出力
 - `dist/`: 本番用ビルド成果物（Firebase Hostingのpublic）
