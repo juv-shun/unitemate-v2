@@ -101,7 +101,6 @@
 | source_type | string | match |
 | match_id | string | 試合ID |
 | status | string | waiting / in_progress / completed |
-| first_team | string | first / second |
 | started_at | timestamp | 開始時刻 |
 | completed_at | timestamp | 完了時刻 |
 | expires_at | timestamp | ドラフト履歴の期限（20日） |
