@@ -27,6 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loginProcessing, setLoginProcessing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -37,8 +38,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async () => {
+    if (loginProcessing) return;
+    setLoginProcessing(true);
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      await signInWithPopup(auth, provider);
+    } finally {
+      setLoginProcessing(false);
+    }
   };
 
   const logout = async () => {

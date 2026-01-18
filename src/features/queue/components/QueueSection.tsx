@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQueue } from "../QueueContext";
 import { SearchingIndicator } from "./SearchingIndicator";
 
@@ -9,10 +10,17 @@ function formatElapsedTime(seconds: number): string {
 }
 
 export function QueueSection() {
-  const { queueStatus, queueJoinedAt, queueLoading, startQueue, cancelQueue } =
-    useQueue();
+  const {
+    queueStatus,
+    queueJoinedAt,
+    matchedMatchId,
+    queueLoading,
+    startQueue,
+    cancelQueue,
+  } = useQueue();
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (queueStatus !== "waiting" || !queueJoinedAt) {
@@ -125,6 +133,46 @@ export function QueueSection() {
             }}
           >
             {isProcessing ? "CANCELING..." : "CANCEL"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (queueStatus === "matched") {
+    return (
+      <div
+        className="relative rounded-lg p-6 text-center overflow-hidden"
+        style={{
+          backgroundColor: "var(--color-surface)",
+          boxShadow:
+            "0 0 20px rgba(34, 197, 94, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)",
+        }}
+      >
+        <div className="relative z-10 flex flex-col items-center gap-4">
+          <div className="text-lg font-semibold text-emerald-300">
+            マッチ成立！
+          </div>
+          <p className="text-sm text-slate-300">
+            チーム分けと先攻/後攻を表示します
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              if (matchedMatchId) {
+                navigate(`/match/${matchedMatchId}`);
+              }
+            }}
+            disabled={!matchedMatchId}
+            className="px-6 py-2.5 rounded font-semibold text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-text-primary)",
+              backgroundColor: "rgba(34, 197, 94, 0.15)",
+              border: "1px solid rgba(34, 197, 94, 0.4)",
+            }}
+          >
+            結果画面へ
           </button>
         </div>
       </div>

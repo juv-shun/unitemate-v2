@@ -59,6 +59,7 @@ export async function getMatch(matchId: string): Promise<Match | null> {
 		status: data.status,
 		capacity: data.capacity,
 		auto_start: data.auto_start,
+		first_team: data.first_team,
 		created_at: data.created_at?.toDate(),
 		updated_at: data.updated_at?.toDate(),
 	};
@@ -489,6 +490,7 @@ export function subscribeToMatch(
 					status: data.status,
 					capacity: data.capacity,
 					auto_start: data.auto_start,
+					first_team: data.first_team,
 					created_at: data.created_at?.toDate(),
 					updated_at: data.updated_at?.toDate(),
 				});

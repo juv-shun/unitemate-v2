@@ -13,6 +13,7 @@ export async function startQueue(uid: string): Promise<void> {
   await updateDoc(userRef, {
     queue_status: "waiting",
     queue_joined_at: serverTimestamp(),
+    matched_match_id: null,
   });
 }
 
@@ -21,12 +22,14 @@ export async function cancelQueue(uid: string): Promise<void> {
   await updateDoc(userRef, {
     queue_status: null,
     queue_joined_at: null,
+    matched_match_id: null,
   });
 }
 
 export interface QueueData {
   status: QueueStatus;
   joinedAt: Date | null;
+  matchedMatchId: string | null;
 }
 
 export function subscribeToQueueStatus(
@@ -40,9 +43,10 @@ export function subscribeToQueueStatus(
       callback({
         status: data.queue_status ?? null,
         joinedAt: data.queue_joined_at?.toDate() ?? null,
+        matchedMatchId: data.matched_match_id ?? null,
       });
     } else {
-      callback({ status: null, joinedAt: null });
+      callback({ status: null, joinedAt: null, matchedMatchId: null });
     }
   });
 }

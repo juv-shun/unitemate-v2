@@ -26,6 +26,7 @@ export interface Match {
 	status: MatchStatus;
 	capacity: 10;
 	auto_start: true;
+	first_team?: Team;
 	created_at: Date;
 	updated_at: Date;
 }

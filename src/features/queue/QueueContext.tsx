@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
   type QueueData,
@@ -18,6 +19,7 @@ import type { QueueStatus } from "./types";
 interface QueueContextType {
   queueStatus: QueueStatus;
   queueJoinedAt: Date | null;
+  matchedMatchId: string | null;
   queueLoading: boolean;
   startQueue: () => Promise<void>;
   cancelQueue: () => Promise<void>;
@@ -31,14 +33,18 @@ interface QueueProviderProps {
 
 export function QueueProvider({ children }: QueueProviderProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [queueStatus, setQueueStatus] = useState<QueueStatus>(null);
   const [queueJoinedAt, setQueueJoinedAt] = useState<Date | null>(null);
+  const [matchedMatchId, setMatchedMatchId] = useState<string | null>(null);
   const [queueLoading, setQueueLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setQueueStatus(null);
       setQueueJoinedAt(null);
+      setMatchedMatchId(null);
       setQueueLoading(false);
       return;
     }
@@ -47,11 +53,21 @@ export function QueueProvider({ children }: QueueProviderProps) {
     const unsubscribe = subscribeToQueueStatus(user.uid, (data: QueueData) => {
       setQueueStatus(data.status);
       setQueueJoinedAt(data.joinedAt);
+      setMatchedMatchId(data.matchedMatchId);
       setQueueLoading(false);
     });
 
     return () => unsubscribe();
   }, [user]);
+
+  useEffect(() => {
+    if (queueStatus !== "matched" || !matchedMatchId) return;
+
+    const targetPath = `/match/${matchedMatchId}`;
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [queueStatus, matchedMatchId, location.pathname, navigate]);
 
   const startQueue = useCallback(async () => {
     if (!user) return;
@@ -68,6 +84,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
       value={{
         queueStatus,
         queueJoinedAt,
+        matchedMatchId,
         queueLoading,
         startQueue,
         cancelQueue,

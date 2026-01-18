@@ -5,7 +5,29 @@ service cloud.firestore {
     // ユーザーコレクション
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId
+        && (
+          // プロフィール等の更新（キュー関連の変更なし）
+          !request.resource.data.diff(resource.data).changedKeys().hasAny([
+            "queue_status",
+            "queue_joined_at",
+            "matched_match_id"
+          ])
+          ||
+          // キュー開始/キャンセルはクライアントから許可（matchedは不可）
+          (
+            request.resource.data.queue_status in ["waiting", null]
+            && request.resource.data.matched_match_id == null
+            && (
+              (request.resource.data.queue_status == "waiting"
+                && request.resource.data.queue_joined_at is timestamp)
+              ||
+              (request.resource.data.queue_status == null
+                && request.resource.data.queue_joined_at == null)
+            )
+          )
+        );
     }
 
     // matches コレクション
@@ -13,40 +35,15 @@ service cloud.firestore {
       // 認証済みユーザーは読み取り可能
       allow read: if request.auth != null;
 
-      // 作成は認証済みユーザーのみ
-      allow create: if request.auth != null
-        && request.resource.data.phase == "phase1"
-        && request.resource.data.source_type == "manual"
-        && request.resource.data.status == "waiting"
-        && request.resource.data.capacity == 10
-        && request.resource.data.auto_start == true;
-
-      // ステータス更新: waiting → draft_pending のみ許可
-      allow update: if request.auth != null
-        && resource.data.status == "waiting"
-        && request.resource.data.status == "draft_pending"
-        && request.resource.data.keys().hasOnly(["status", "updated_at"]);
+      // 作成・更新はバックエンド専用
+      allow create, update, delete: if false;
 
       // members サブコレクション
       match /members/{memberId} {
         allow read: if request.auth != null;
 
-        // 作成は自分のuser_idのみ、memberIdはuser_idと一致必須
-        allow create: if request.auth != null
-          && memberId == request.auth.uid
-          && request.resource.data.user_id == request.auth.uid
-          && request.resource.data.role in ["participant", "spectator"]
-          // マッチがwaiting状態の時のみ参加可能
-          && get(/databases/$(database)/documents/matches/$(matchId)).data.status == "waiting"
-          && (request.resource.data.role == "spectator"
-              || (request.resource.data.team in ["first", "second"]
-                  && request.resource.data.seat_no >= 1
-                  && request.resource.data.seat_no <= 5));
-
-        // 削除は自分のドキュメントのみ
-        allow delete: if request.auth != null
-          && memberId == request.auth.uid
-          && resource.data.user_id == request.auth.uid;
+        // 作成・更新・削除はバックエンド専用
+        allow create, update, delete: if false;
       }
     }
 

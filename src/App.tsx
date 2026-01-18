@@ -5,6 +5,7 @@ import { AuthProvider } from "./features/auth/AuthContext";
 import { LoginPage } from "./features/auth/LoginPage";
 import { DraftSimulationPage } from "./features/draft/DraftSimulationPage";
 import { MatchProvider } from "./features/draft/MatchContext";
+import { MatchResultPage } from "./features/match/MatchResultPage";
 import { MyPage } from "./features/mypage/MyPage";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
@@ -44,6 +45,16 @@ function App() {
 									<ProtectedRoute>
 										<Layout>
 											<DraftSimulationPage />
+										</Layout>
+									</ProtectedRoute>
+								}
+							/>
+							<Route
+								path="/match/:matchId?"
+								element={
+									<ProtectedRoute>
+										<Layout>
+											<MatchResultPage />
 										</Layout>
 									</ProtectedRoute>
 								}

@@ -1,4 +1,11 @@
 {
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs20"
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -19,6 +26,9 @@
     },
     "firestore": {
       "port": 8080
+    },
+    "pubsub": {
+      "port": 8085
     },
     "ui": {
       "enabled": true,

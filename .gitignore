@@ -2,12 +2,14 @@
 node_modules
 .pnp
 .pnp.js
+functions/node_modules
 
 # Build outputs
 dist
 dist-ssr
 build
 *.local
+functions/lib
 
 # Testing
 coverage
