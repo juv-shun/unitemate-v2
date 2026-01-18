@@ -38,7 +38,7 @@
 ## マッチング方式
 
 ### トリガー
-**バックエンド（Firebase Functions - Python）推奨**
+**バックエンド（Firebase Functions - TypeScript）採用**
 - 定期実行 or Firestore変更検知でマッチング処理を実行
 - トランザクションで競合・二重成立を回避
 

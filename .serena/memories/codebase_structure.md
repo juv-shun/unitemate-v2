@@ -37,7 +37,18 @@ src/
 ├── components/                    # 再利用可能なコンポーネント
 │   ├── ProtectedRoute.tsx         # 認証・オンボーディング状態に基づくルート保護
 │   ├── Layout.tsx                 # サイドバー付きレイアウト（認証済みページ用）
-│   └── Sidebar.tsx                # サイドメニュー（ナビゲーション・ログアウト）
+│   └── Sidebar.tsx
+├── features/                      # 機能別モジュール（Feature-First Architecture）
+│   ├── auth/                      # 認証機能
+│   ├── draft/                     # ドラフト機能
+│   ├── match/                     # マッチング機能
+│   ├── mypage/                    # マイページ
+│   ├── onboarding/                # オンボーディング
+│   ├── profile/                   # プロフィール
+│   ├── queue/                     # キュー機能
+│   ├── ranking/                   # ランキング機能
+│   └── stats/                     # 統計機能
+# サイドメニュー（ナビゲーション・ログアウト）
 ├── features/                      # 機能別モジュール
 │   ├── auth/                      # 認証機能
 │   │   ├── AuthContext.tsx        # 認証状態管理（Google OAuth）
