@@ -35,15 +35,39 @@ service cloud.firestore {
       // 認証済みユーザーは読み取り可能
       allow read: if request.auth != null;
 
-      // 作成・更新はバックエンド専用
-      allow create, update, delete: if false;
+      // 作成: 認証済みユーザーのみ（フェーズ1: 手動作成ドラフト用）
+      allow create: if request.auth != null
+        && request.resource.data.status == "waiting"
+        && request.resource.data.created_at is timestamp;
+
+      // 更新: ステータス遷移のみ許可（waiting -> draft_pending）
+      allow update: if request.auth != null
+        && resource.data.status == "waiting"
+        && request.resource.data.status == "draft_pending";
+
+      // 削除は禁止
+      allow delete: if false;
 
       // members サブコレクション
       match /members/{memberId} {
         allow read: if request.auth != null;
 
-        // 作成・更新・削除はバックエンド専用
-        allow create, update, delete: if false;
+        // 作成: 自分自身のメンバードキュメントのみ作成可能
+        allow create: if request.auth != null
+          && request.auth.uid == memberId
+          && request.resource.data.user_id == request.auth.uid
+          && request.resource.data.role in ["participant", "spectator"];
+
+        // 更新: 自分自身の座席移動のみ許可（team, seat_noの変更）
+        allow update: if request.auth != null
+          && request.auth.uid == memberId
+          && resource.data.user_id == request.auth.uid
+          && request.resource.data.user_id == request.auth.uid
+          && request.resource.data.role == resource.data.role;
+
+        // 削除: 自分自身のみ退出可能
+        allow delete: if request.auth != null
+          && request.auth.uid == memberId;
       }
     }
 

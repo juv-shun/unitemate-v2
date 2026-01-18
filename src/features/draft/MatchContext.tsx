@@ -1,6 +1,6 @@
 import {
-	type ReactNode,
 	createContext,
+	type ReactNode,
 	useCallback,
 	useContext,
 	useEffect,
@@ -9,14 +9,15 @@ import {
 } from "react";
 import { useAuth } from "../auth/AuthContext";
 import {
+	changeSeat as changeSeatFn,
 	createDraftSession,
 	createMatch as createMatchFn,
 	joinAsParticipant as joinAsParticipantFn,
 	joinAsSpectator as joinAsSpectatorFn,
 	leaveMatch as leaveMatchFn,
+	subscribeToDraftSession,
 	subscribeToMatch,
 	subscribeToMembers,
-	subscribeToDraftSession,
 } from "./match";
 import type { DraftSession, Match, Member, Team } from "./types";
 
@@ -37,6 +38,7 @@ interface MatchContextType {
 	) => Promise<void>;
 	joinAsSpectator: (matchId: string) => Promise<void>;
 	leaveMatch: () => Promise<void>;
+	changeSeat: (newTeam: Team, newSeatNo: number) => Promise<void>;
 	setCurrentMatchId: (matchId: string | null) => void;
 
 	// 計算プロパティ
@@ -195,6 +197,22 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		}
 	}, [user, currentMatchId]);
 
+	const changeSeat = useCallback(
+		async (newTeam: Team, newSeatNo: number): Promise<void> => {
+			if (!user || !currentMatchId)
+				throw new Error("User not authenticated or no match");
+			try {
+				await changeSeatFn(currentMatchId, user.uid, newTeam, newSeatNo);
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : "Failed to change seat";
+				setError(errorMessage);
+				throw err;
+			}
+		},
+		[user, currentMatchId],
+	);
+
 	// 計算プロパティ
 	const participantCount = useMemo(
 		() => members.filter((m) => m.role === "participant").length,
@@ -211,10 +229,7 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		[myMember],
 	);
 
-	const isSpectator = useMemo(
-		() => myMember?.role === "spectator",
-		[myMember],
-	);
+	const isSpectator = useMemo(() => myMember?.role === "spectator", [myMember]);
 
 	const firstTeamMembers = useMemo(
 		() =>
@@ -249,6 +264,7 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				joinAsParticipant,
 				joinAsSpectator,
 				leaveMatch,
+				changeSeat,
 				setCurrentMatchId,
 				participantCount,
 				isParticipant,

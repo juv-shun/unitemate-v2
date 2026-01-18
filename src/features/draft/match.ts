@@ -1,22 +1,22 @@
 import {
-	type Unsubscribe,
 	collection,
-	doc,
-	setDoc,
-	updateDoc,
 	deleteDoc,
+	doc,
 	getDoc,
 	getDocs,
 	onSnapshot,
-	serverTimestamp,
-	query,
-	where,
 	orderBy,
+	query,
 	runTransaction,
+	serverTimestamp,
+	setDoc,
 	Timestamp,
+	type Unsubscribe,
+	updateDoc,
+	where,
 } from "firebase/firestore";
 import { db } from "../../firebase";
-import type { Match, Member, DraftSession, Turn, Team } from "./types";
+import type { DraftSession, Match, Member, Team, Turn } from "./types";
 
 // =====================================
 // Match CRUD
@@ -164,6 +164,114 @@ export async function joinAsParticipant(
 }
 
 /**
+ * 座席移動（参加者が別の空席に移動）
+ * チーム間の移動も許可
+ */
+export async function changeSeat(
+	matchId: string,
+	userId: string,
+	newTeam: Team,
+	newSeatNo: number,
+): Promise<void> {
+	// バリデーション
+	if (!["first", "second"].includes(newTeam)) {
+		throw new Error("無効なチーム");
+	}
+	if (newSeatNo < 1 || newSeatNo > 5) {
+		throw new Error("無効な席番号");
+	}
+
+	// 事前チェック（Transaction外で高速チェック）
+	const matchRef = doc(db, "matches", matchId);
+	const matchSnap = await getDoc(matchRef);
+	if (!matchSnap.exists()) {
+		throw new Error("マッチが見つかりません");
+	}
+	const matchData = matchSnap.data() as Match;
+	if (matchData.status !== "waiting") {
+		throw new Error("ドラフト開始後は座席を移動できません");
+	}
+
+	const membersRef = collection(db, "matches", matchId, "members");
+	const membersSnapshot = await getDocs(membersRef);
+	const memberDataMap = new Map<
+		string,
+		{ team: Team; seat_no: number; role: string }
+	>();
+	const occupiedSeats = new Map<string, string>(); // seatKey -> userId
+
+	for (const memberDoc of membersSnapshot.docs) {
+		const data = memberDoc.data();
+		memberDataMap.set(memberDoc.id, {
+			team: data.team,
+			seat_no: data.seat_no,
+			role: data.role,
+		});
+		if (data.role === "participant") {
+			const seatKey = `${data.team}_${data.seat_no}`;
+			occupiedSeats.set(seatKey, memberDoc.id);
+		}
+	}
+
+	// ユーザーが参加者として存在することを確認
+	const currentMemberData = memberDataMap.get(userId);
+	if (!currentMemberData || currentMemberData.role !== "participant") {
+		throw new Error("参加者として登録されていません");
+	}
+
+	// 同じ席に移動しようとしている場合は何もしない
+	if (
+		currentMemberData.team === newTeam &&
+		currentMemberData.seat_no === newSeatNo
+	) {
+		return;
+	}
+
+	// 移動先の席が空いていることを確認
+	const targetSeatKey = `${newTeam}_${newSeatNo}`;
+	if (occupiedSeats.has(targetSeatKey)) {
+		throw new Error("この席は既に埋まっています");
+	}
+
+	// Transaction内で最終確認と更新
+	await runTransaction(db, async (transaction) => {
+		// マッチステータスの最終確認
+		const matchSnap = await transaction.get(matchRef);
+		if (!matchSnap.exists()) {
+			throw new Error("マッチが見つかりません");
+		}
+		const matchData = matchSnap.data() as Match;
+		if (matchData.status !== "waiting") {
+			throw new Error("ドラフト開始後は座席を移動できません");
+		}
+
+		// 移動先の席が空いていることを最終確認
+		for (const [memberId, _data] of memberDataMap.entries()) {
+			if (memberId === userId) continue; // 自分自身はスキップ
+			const memberRef = doc(db, "matches", matchId, "members", memberId);
+			const memberSnap = await transaction.get(memberRef);
+			if (memberSnap.exists()) {
+				const memberData = memberSnap.data();
+				if (
+					memberData.role === "participant" &&
+					memberData.team === newTeam &&
+					memberData.seat_no === newSeatNo
+				) {
+					throw new Error("この席は既に埋まっています");
+				}
+			}
+		}
+
+		// 座席情報を更新
+		const memberRef = doc(db, "matches", matchId, "members", userId);
+		transaction.update(memberRef, {
+			team: newTeam,
+			seat_no: newSeatNo,
+		});
+	});
+}
+
+/**
  * 観戦者として参加
  */
 export async function joinAsSpectator(
@@ -267,9 +375,7 @@ function shuffleArray<T>(array: T[]): T[] {
  * BAN順: 先攻→後攻→先攻→後攻→先攻→後攻（6ターン）
  * PICK順: 先攻1→後攻2→先攻2→後攻2→先攻2→後攻1（10ターン）
  */
-export function generateTurns(
-	members: Member[],
-): Omit<Turn, "id">[] {
+export function generateTurns(members: Member[]): Omit<Turn, "id">[] {
 	// チームごとに参加者を分ける
 	const firstTeam = members.filter(
 		(m) => m.role === "participant" && m.team === "first",
