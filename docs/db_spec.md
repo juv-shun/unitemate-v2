@@ -208,17 +208,21 @@ BAN/PICKのリクエスト（承認で確定）。
 ---
 
 ### 3.10 matches/{matchId}/reports
-未着席通報の記録（サブコレクション）。
+未参加（ノーショー）通報の記録（サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
 | match_id | string | 試合ID |
 | reporter_user_id | string | 通報者ユーザーID |
 | reported_user_id | string | 被通報ユーザーID |
-| reason | string | not_seated |
+| reason | string | no_show |
 | match_created_at | timestamp | マッチ成立時刻 |
 | reported_at | timestamp | 通報時刻 |
 | screenshot_url | string | スクリーンショットURL（任意） |
+
+アプリ側制約:
+- match内で reporter_user_id + reported_user_id の重複不可
+- 同一 match 内で reported_user_id に対する通報が **別ユーザーから3件** 集まったら、penalties を作成
 
 ---
 
@@ -265,9 +269,9 @@ Elo反映履歴（ユーザー配下サブコレクション）。
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
 | match_id | string | 対象試合 |
-| reason | string | no_show / other |
-| banned_until | timestamp | インキュー禁止期限 |
-| created_at | timestamp | 作成日時 |
+| reason | string | no_show_report / other |
+| banned_until | timestamp | インキュー禁止期限（penalty確定時刻 + 3時間） |
+| created_at | timestamp | ペナルティ確定時刻 |
 
 インデックス: banned_until
 
@@ -331,7 +335,8 @@ Elo反映履歴（ユーザー配下サブコレクション）。
 1. matches/{matchId}/result_votes に投票  
 2. 多数決で matches/{matchId}/match_results 確定  
 3. users/{userId}/rating_changes 作成  
-4. no_show などを users/{userId}/penalties に記録  
+4. reports で no_show_report 判定（同一 match 内で別ユーザーから3件）  
+5. no_show_report を users/{userId}/penalties に記録  
 
 ---
 
