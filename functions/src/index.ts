@@ -82,7 +82,7 @@ const commitMatch = async (
     transaction.set(matchRef, {
       phase: "phase1",
       source_type: "auto",
-      status: "draft_pending",
+      status: "lobby_pending",
       capacity: 10,
       auto_start: true,
       first_team: firstTeam,

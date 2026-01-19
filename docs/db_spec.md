@@ -76,6 +76,8 @@
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
 
+補足: フェーズ1の自動マッチ成立時は status を lobby_pending とする（draft_pending はドラフト実装時に使用）。
+
 ---
 
 ### 3.4 matches/{matchId}/members
@@ -277,6 +279,7 @@ Elo反映履歴（ユーザー配下サブコレクション）。
 ## 5. 主要ユースケースとDB更新フロー
 
 ### 5.1 フェーズ1/2 マッチング〜ドラフト
+※フェーズ1の自動マッチ成立時は status を lobby_pending とする。
 1. queue_entries に queued を追加  
 2. マッチ成立で matches, matches/{matchId}/members を作成  
 3. draft_sessions を作成し、draft_sessions/{draftId}/turns を事前生成  
