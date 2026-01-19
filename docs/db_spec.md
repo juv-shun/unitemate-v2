@@ -96,6 +96,8 @@
 | seated_at | timestamp \| null | 着席時刻（未着席はnull） |
 | lobby_issue | boolean | 困り中フラグ |
 | lobby_issue_at | timestamp \| null | 困り中設定時刻 |
+| match_result | string \| null | 試合結果（win / loss / invalid、未入力はnull） |
+| match_left_at | timestamp \| null | 退席時刻（未入力はnull） |
 
 アプリ側制約: match内で user_id 重複不可、participant は最大10人
 
@@ -323,5 +325,5 @@ Elo反映履歴（ユーザー配下サブコレクション）。
 
 ## 7. フェーズ別利用範囲
 
-- フェーズ1: users, queue_entries, matches, members, draft_sessions, turns, actions, requests, selections, lobby_infos, pick_histories
+- フェーズ1: users, queue_entries, matches, members（match_result含む）, draft_sessions, turns, actions, requests, selections, lobby_infos, pick_histories
 - フェーズ2: 上記 + match_results, result_votes, rating_changes, penalties

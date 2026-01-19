@@ -73,7 +73,10 @@ service cloud.firestore {
             (
               get(/databases/$(database)/documents/matches/$(matchId)).data.status == "lobby_pending"
               && request.resource.data.diff(resource.data).changedKeys().hasOnly([
-                "lobby_issue", "lobby_issue_at"
+                "lobby_issue",
+                "lobby_issue_at",
+                "match_result",
+                "match_left_at"
               ])
             )
           );

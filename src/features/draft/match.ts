@@ -1,7 +1,6 @@
 import {
 	addDoc,
 	collection,
-	deleteDoc,
 	doc,
 	getDoc,
 	getDocs,
@@ -18,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../firebase";
-import type { DraftSession, Match, Member, Team, Turn } from "./types";
+import type { DraftSession, Match, MatchResult, Member, Team, Turn } from "./types";
 
 // =====================================
 // Match CRUD
@@ -302,9 +301,16 @@ export async function joinAsSpectator(
 export async function leaveMatch(
 	matchId: string,
 	userId: string,
+	matchResult: MatchResult,
 ): Promise<void> {
 	const memberRef = doc(db, "matches", matchId, "members", userId);
-	await deleteDoc(memberRef);
+	if (!["win", "loss", "invalid"].includes(matchResult)) {
+		throw new Error("無効な試合結果です");
+	}
+	await updateDoc(memberRef, {
+		match_result: matchResult,
+		match_left_at: serverTimestamp(),
+	});
 }
 
 /**
@@ -325,6 +331,8 @@ export async function getMembers(matchId: string): Promise<Member[]> {
 		seated_at: doc.data().seated_at?.toDate() ?? null,
 		lobby_issue: doc.data().lobby_issue,
 		lobby_issue_at: doc.data().lobby_issue_at?.toDate() ?? null,
+		match_result: doc.data().match_result ?? null,
+		match_left_at: doc.data().match_left_at?.toDate() ?? null,
 	}));
 }
 

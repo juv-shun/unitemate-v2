@@ -5,7 +5,7 @@ import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../../queue/QueueContext";
 import { storage } from "../../../firebase";
 import { useMatch } from "../MatchContext";
-import type { Member } from "../types";
+import type { MatchResult, Member } from "../types";
 
 export function MatchLobby() {
   const { user } = useAuth();
@@ -35,10 +35,17 @@ export function MatchLobby() {
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [reportSubmitting, setReportSubmitting] = useState(false);
   const [reportError, setReportError] = useState("");
+  const [showEndMatchModal, setShowEndMatchModal] = useState(false);
+  const [endMatchResult, setEndMatchResult] = useState<MatchResult | "">("");
+  const [endMatchSubmitting, setEndMatchSubmitting] = useState(false);
+  const [endMatchError, setEndMatchError] = useState("");
 
   useEffect(() => {
     setShowLobbyScreen(false);
     setEntryError("");
+    setShowEndMatchModal(false);
+    setEndMatchResult("");
+    setEndMatchError("");
   }, [currentMatch?.id]);
 
   // ロビーID設定
@@ -132,15 +139,28 @@ export function MatchLobby() {
     }
   };
 
-  const handleEndMatch = async () => {
-    if (!window.confirm("試合を終了して退出しますか？")) return;
+  const handleOpenEndMatchModal = () => {
+    setEndMatchError("");
+    setShowEndMatchModal(true);
+  };
+
+  const handleConfirmEndMatch = async () => {
+    if (!endMatchResult) {
+      setEndMatchError("試合結果を選択してください。");
+      return;
+    }
+    setEndMatchSubmitting(true);
     try {
-      await leaveMatch();
+      await leaveMatch(endMatchResult as MatchResult);
       await cancelQueue();
       navigate("/");
     } catch (err) {
       console.error("Failed to end match:", err);
-      alert("退出に失敗しました。時間をおいて再試行してください。");
+      setEndMatchError(
+        "退出に失敗しました。時間をおいて再試行してください。",
+      );
+    } finally {
+      setEndMatchSubmitting(false);
     }
   };
 
@@ -324,6 +344,124 @@ export function MatchLobby() {
         </div>
       )}
 
+      {showEndMatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(2, 6, 23, 0.78)" }}
+          />
+          <div
+            className="relative w-full max-w-lg rounded-2xl p-6 text-left"
+            style={{
+              backgroundColor: "var(--color-surface)",
+              boxShadow:
+                "0 24px 60px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+            }}
+          >
+            <h2
+              className="text-xl font-bold tracking-wide"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              試合結果の入力
+            </h2>
+            <p className="mt-2 text-sm text-slate-300">
+              試合終了前に結果を選択してください（必須）。
+            </p>
+            <div className="mt-4 grid gap-3">
+              {[
+                { value: "win", label: "勝利" },
+                { value: "loss", label: "敗北" },
+                { value: "invalid", label: "無効" },
+              ].map((option) => (
+                <label
+                  key={option.value}
+                  className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-semibold"
+                  style={{
+                    borderColor: "rgba(148, 163, 184, 0.2)",
+                    color: "var(--color-text-primary)",
+                    backgroundColor:
+                      endMatchResult === option.value
+                        ? "rgba(6, 182, 212, 0.12)"
+                        : "rgba(15, 23, 42, 0.35)",
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="match-result"
+                    value={option.value}
+                    checked={endMatchResult === option.value}
+                    onChange={() => {
+                      setEndMatchResult(option.value);
+                      setEndMatchError("");
+                    }}
+                    className="h-4 w-4 accent-cyan-400"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+            {endMatchError && (
+              <div className="mt-3 text-sm font-bold text-red-400">
+                {endMatchError}
+              </div>
+            )}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEndMatchModal(false);
+                  setEndMatchError("");
+                }}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: "rgba(100, 116, 139, 0.25)",
+                  color: "var(--color-text-primary)",
+                  border: "1px solid rgba(100, 116, 139, 0.4)",
+                  fontFamily: "var(--font-display)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(100, 116, 139, 0.45)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(100, 116, 139, 0.25)";
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEndMatch}
+                disabled={endMatchSubmitting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "rgba(239, 68, 68, 0.2)",
+                  color: "#f87171",
+                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                  fontFamily: "var(--font-display)",
+                }}
+                onMouseEnter={(e) => {
+                  if (endMatchSubmitting) return;
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239, 68, 68, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239, 68, 68, 0.2)";
+                }}
+              >
+                {endMatchSubmitting ? "処理中..." : "試合終了"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {!shouldShowModal && (
         <>
           {/* ロビーID入力セクション */}
@@ -494,7 +632,7 @@ export function MatchLobby() {
           <div className="pt-2">
             <button
               type="button"
-              onClick={handleEndMatch}
+              onClick={handleOpenEndMatchModal}
               className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 backgroundColor: "rgba(239, 68, 68, 0.15)",

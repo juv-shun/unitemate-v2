@@ -25,7 +25,7 @@ import {
 	unsetLobbyIssue as unsetLobbyIssueFn,
 	unsetSeated as unsetSeatedFn,
 } from "./match";
-import type { DraftSession, Match, Member, Team } from "./types";
+import type { DraftSession, Match, MatchResult, Member, Team } from "./types";
 
 interface MatchContextType {
 	// 状態
@@ -43,7 +43,7 @@ interface MatchContextType {
 		seatNo: number,
 	) => Promise<void>;
 	joinAsSpectator: (matchId: string) => Promise<void>;
-	leaveMatch: () => Promise<void>;
+	leaveMatch: (matchResult: MatchResult) => Promise<void>;
 	changeSeat: (newTeam: Team, newSeatNo: number) => Promise<void>;
 	setCurrentMatchId: (matchId: string | null) => void;
 	
@@ -199,17 +199,18 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		[user],
 	);
 
-	const leaveMatch = useCallback(async (): Promise<void> => {
-		if (!user || !currentMatchId) return;
-		try {
-			await leaveMatchFn(currentMatchId, user.uid);
-			setCurrentMatchId(null);
-		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "Failed to leave match";
-			setError(errorMessage);
-			throw err;
-		}
+	const leaveMatch = useCallback(
+		async (matchResult: MatchResult): Promise<void> => {
+			if (!user || !currentMatchId) return;
+			try {
+				await leaveMatchFn(currentMatchId, user.uid, matchResult);
+				setCurrentMatchId(null);
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : "Failed to leave match";
+				setError(errorMessage);
+				throw err;
+			}
 	}, [user, currentMatchId]);
 
 	const changeSeat = useCallback(

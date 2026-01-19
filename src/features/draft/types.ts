@@ -17,6 +17,8 @@ export type Team = "first" | "second";
 
 export type ActionType = "ban" | "pick";
 
+export type MatchResult = "win" | "loss" | "invalid";
+
 // Match型（試合/ルーム）
 export interface Match {
 	id: string;
@@ -43,6 +45,8 @@ export interface Member {
 	seated_at?: Date | null; // 着席時刻（nullは未着席）
 	lobby_issue?: boolean; // 困り中フラグ
 	lobby_issue_at?: Date | null; // 困り中設定時刻
+	match_result?: MatchResult | null; // 試合結果（未入力はnull）
+	match_left_at?: Date | null; // 退席時刻（未入力はnull）
 	// 表示用（usersコレクションからjoin）
 	display_name?: string;
 	photo_url?: string;
