@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -21,6 +22,9 @@ interface QueueContextType {
   queueJoinedAt: Date | null;
   matchedMatchId: string | null;
   queueLoading: boolean;
+  bannedUntil: Date | null;
+  isBanned: boolean;
+  remainingBanTime: number | null;
   startQueue: () => Promise<void>;
   cancelQueue: () => Promise<void>;
 }
@@ -38,6 +42,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
   const [queueStatus, setQueueStatus] = useState<QueueStatus>(null);
   const [queueJoinedAt, setQueueJoinedAt] = useState<Date | null>(null);
   const [matchedMatchId, setMatchedMatchId] = useState<string | null>(null);
+  const [bannedUntil, setBannedUntil] = useState<Date | null>(null);
   const [queueLoading, setQueueLoading] = useState(true);
 
   useEffect(() => {
@@ -45,6 +50,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
       setQueueStatus(null);
       setQueueJoinedAt(null);
       setMatchedMatchId(null);
+      setBannedUntil(null);
       setQueueLoading(false);
       return;
     }
@@ -54,6 +60,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
       setQueueStatus(data.status);
       setQueueJoinedAt(data.joinedAt);
       setMatchedMatchId(data.matchedMatchId);
+      setBannedUntil(data.bannedUntil);
       setQueueLoading(false);
     });
 
@@ -69,10 +76,23 @@ export function QueueProvider({ children }: QueueProviderProps) {
     }
   }, [queueStatus, matchedMatchId, location.pathname, navigate]);
 
+  const isBanned = useMemo(() => {
+    if (!bannedUntil) return false;
+    return bannedUntil.getTime() > Date.now();
+  }, [bannedUntil]);
+
+  const remainingBanTime = useMemo(() => {
+    if (!bannedUntil || !isBanned) return null;
+    return bannedUntil.getTime() - Date.now();
+  }, [bannedUntil, isBanned]);
+
   const startQueue = useCallback(async () => {
     if (!user) return;
+    if (isBanned) {
+      throw new Error("ペナルティ中のため、マッチングに参加できません");
+    }
     await startQueueFn(user.uid);
-  }, [user]);
+  }, [user, isBanned]);
 
   const cancelQueue = useCallback(async () => {
     if (!user) return;
@@ -86,6 +106,9 @@ export function QueueProvider({ children }: QueueProviderProps) {
         queueJoinedAt,
         matchedMatchId,
         queueLoading,
+        bannedUntil,
+        isBanned,
+        remainingBanTime,
         startQueue,
         cancelQueue,
       }}

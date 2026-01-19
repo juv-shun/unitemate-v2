@@ -30,6 +30,7 @@ export interface QueueData {
   status: QueueStatus;
   joinedAt: Date | null;
   matchedMatchId: string | null;
+  bannedUntil: Date | null;
 }
 
 export function subscribeToQueueStatus(
@@ -44,9 +45,10 @@ export function subscribeToQueueStatus(
         status: data.queue_status ?? null,
         joinedAt: data.queue_joined_at?.toDate() ?? null,
         matchedMatchId: data.matched_match_id ?? null,
+        bannedUntil: data.banned_until?.toDate() ?? null,
       });
     } else {
-      callback({ status: null, joinedAt: null, matchedMatchId: null });
+      callback({ status: null, joinedAt: null, matchedMatchId: null, bannedUntil: null });
     }
   });
 }

@@ -819,13 +819,13 @@ export async function createReport(
 		match_id: matchId,
 		reporter_user_id: reporterUserId,
 		reported_user_id: reportedUserId,
-		reason: "not_seated",
+		reason: "no_show",
 		match_created_at: Timestamp.fromDate(matchCreatedAt),
 		reported_at: serverTimestamp(),
 	};
 	if (screenshotUrl) {
 		payload.screenshot_url = screenshotUrl;
 	}
-	const docRef = await addDoc(collection(db, "reports"), payload);
+	const docRef = await addDoc(collection(db, "matches", matchId, "reports"), payload);
 	return docRef.id;
 }

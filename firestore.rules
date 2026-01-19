@@ -8,11 +8,12 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == userId;
       allow update: if request.auth != null && request.auth.uid == userId
         && (
-          // プロフィール等の更新（キュー関連の変更なし）
+          // プロフィール等の更新（キュー関連およびペナルティ関連の変更なし）
           !request.resource.data.diff(resource.data).changedKeys().hasAny([
             "queue_status",
             "queue_joined_at",
-            "matched_match_id"
+            "matched_match_id",
+            "banned_until"
           ])
           ||
           // キュー開始/キャンセルはクライアントから許可（matchedは不可）
@@ -28,6 +29,14 @@ service cloud.firestore {
             )
           )
         );
+
+      // penalties サブコレクション
+      match /penalties/{penaltyId} {
+        // 読み取り: 本人のみ
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // 作成・更新・削除: バックエンドのみ
+        allow create, update, delete: if false;
+      }
     }
 
     // matches コレクション
@@ -85,6 +94,27 @@ service cloud.firestore {
         allow delete: if request.auth != null
           && request.auth.uid == memberId;
       }
+
+      // reports サブコレクション（通報）
+      match /reports/{reportId} {
+        // 読み取り: マッチ参加者のみ
+        allow read: if request.auth != null
+          && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.auth.uid));
+
+        // 作成: マッチ参加者のみ、reason="no_show"、自己通報禁止
+        allow create: if request.auth != null
+          && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.auth.uid))
+          && request.resource.data.reporter_user_id == request.auth.uid
+          && request.resource.data.reported_user_id != request.auth.uid
+          && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.resource.data.reported_user_id))
+          && request.resource.data.reason == "no_show"
+          && request.resource.data.match_id == matchId
+          && request.resource.data.match_created_at is timestamp
+          && request.resource.data.reported_at is timestamp;
+
+        // 更新・削除は禁止
+        allow update, delete: if false;
+      }
     }
 
     // draft_sessions コレクション
@@ -115,28 +145,5 @@ service cloud.firestore {
       }
     }
 
-    // reports コレクション（通報）
-    match /reports/{reportId} {
-      // 読み取り: 通報者または被通報者のみ
-      allow read: if request.auth != null
-        && (resource.data.reporter_user_id == request.auth.uid
-            || resource.data.reported_user_id == request.auth.uid);
-
-      // 作成: 認証済みユーザーのみ、reasonは"not_seated"のみ、自分への通報は禁止
-      allow create: if request.auth != null
-        && request.resource.data.reporter_user_id == request.auth.uid
-        && request.resource.data.reported_user_id != request.auth.uid
-        && request.resource.data.reason == "not_seated"
-        && request.resource.data.match_id is string
-        && request.resource.data.match_created_at is timestamp
-        && request.resource.data.reported_at is timestamp
-        && (
-          !("screenshot_url" in request.resource.data)
-          || request.resource.data.screenshot_url is string
-        );
-
-      // 更新・削除は禁止
-      allow update, delete: if false;
-    }
   }
 }
