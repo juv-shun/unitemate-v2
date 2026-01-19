@@ -508,7 +508,7 @@ function TeamDisplay({
                       border: "1px solid rgba(234, 179, 8, 0.3)",
                     }}
                   >
-                    ⚠
+                    ロビーに入れない
                   </span>
                 )}
                 {isCurrentUser && (
