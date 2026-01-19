@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { storage } from "../../../firebase";
 import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../../queue/QueueContext";
-import { storage } from "../../../firebase";
 import { useMatch } from "../MatchContext";
 import type { MatchResult, Member } from "../types";
 
@@ -133,7 +133,9 @@ export function MatchLobby() {
       alert("通報を送信しました");
     } catch (err) {
       console.error("Failed to create report:", err);
-      setReportError("通報の送信に失敗しました。時間をおいて再試行してください。");
+      setReportError(
+        "通報の送信に失敗しました。時間をおいて再試行してください。",
+      );
     } finally {
       setReportSubmitting(false);
     }
@@ -156,9 +158,7 @@ export function MatchLobby() {
       navigate("/");
     } catch (err) {
       console.error("Failed to end match:", err);
-      setEndMatchError(
-        "退出に失敗しました。時間をおいて再試行してください。",
-      );
+      setEndMatchError("退出に失敗しました。時間をおいて再試行してください。");
     } finally {
       setEndMatchSubmitting(false);
     }
@@ -395,7 +395,7 @@ export function MatchLobby() {
                     value={option.value}
                     checked={endMatchResult === option.value}
                     onChange={() => {
-                      setEndMatchResult(option.value);
+                      setEndMatchResult(option.value as MatchResult);
                       setEndMatchError("");
                     }}
                     className="h-4 w-4 accent-cyan-400"
@@ -679,19 +679,19 @@ export function MatchLobby() {
 
 // チーム表示コンポーネント
 function TeamDisplay({
-	title,
-	members,
-	currentUserId,
-	onReport,
+  title,
+  members,
+  currentUserId,
+  onReport,
   accentColor,
   index,
 }: {
   title: string;
   members: Member[];
   currentUserId?: string;
-	onReport: (member: Member) => void;
-	accentColor: string;
-	index: number;
+  onReport: (member: Member) => void;
+  accentColor: string;
+  index: number;
 }) {
   return (
     <div
