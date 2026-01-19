@@ -27,7 +27,6 @@ export function QueueSection() {
     queueJoinedAt,
     matchedMatchId,
     queueLoading,
-    bannedUntil,
     isBanned,
     remainingBanTime,
     startQueue,
