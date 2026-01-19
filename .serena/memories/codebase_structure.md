@@ -58,8 +58,10 @@ src/
 │   │   ├── DraftSimulationPage.tsx # ドラフトページ
 │   │   ├── MatchContext.tsx       # マッチ状態管理（リアルタイム購読）
 │   │   ├── match.ts               # マッチ関連Firestore操作
+│   │   │                          # - createReport: 通報作成（matches/{matchId}/reportsに保存）
 │   │   ├── types.ts               # 型定義（Match, Member, DraftSession等）
 │   │   └── components/            # ドラフト関連コンポーネント
+│   │       └── MatchLobby.tsx     # マッチロビー画面（通報ボタン・モーダル実装済み）
 │   ├── mypage/                    # マイページ機能
 │   │   └── MyPage.tsx             # プロフィール編集ページ
 │   ├── onboarding/                # オンボーディング機能
@@ -131,9 +133,14 @@ src/
 ### キュー・マッチング機能
 - `src/features/queue/QueueContext.tsx`: キュー状態管理
   - `matchedMatchId`状態を追加（フェーズ1.3）
+  - `bannedUntil`, `isBanned`, `remainingBanTime`状態を追加（通報機能）
+  - `startQueue`でペナルティチェックを実施
 - `src/features/queue/queue.ts`: キュー関連Firestore操作
-  - `subscribeToQueueStatus`: `matched_match_id`フィールド対応（フェーズ1.3）
+  - `subscribeToQueueStatus`: `matched_match_id`と`banned_until`フィールド対応
+  - `QueueData`型に`bannedUntil`フィールド追加
 - `src/features/queue/components/QueueSection.tsx`: キューUIコンポーネント
+  - ペナルティ中の警告表示と残り時間表示（通報機能）
+  - ペナルティ中のボタン無効化
 
 ### マッチ機能（フェーズ1.3実装済み）
 - `src/features/match/MatchResultPage.tsx`: マッチ成立画面（P1-03）
@@ -145,11 +152,19 @@ src/
 - 開発環境ではエミュレータに接続
 
 ### Firebase Functions（バックエンド）
-- `functions/src/index.ts`: Cloud Functions実装（フェーズ1.3）
+- `functions/src/index.ts`: Cloud Functions実装
   - **runMatchmaking**: 1分間隔の定期実行関数
     - 待機ユーザーから10人抽選してマッチ作成
     - トランザクションで競合回避
   - **runMatchmakingManual**: 手動実行用HTTP関数（開発・テスト用）
+  - **onReportCreated**: 通報作成トリガー（通報機能）
+    - `matches/{matchId}/reports`作成時に実行
+    - 同一マッチ・同一被通報者の通報を集計
+    - 異なる通報者から3件で自動ペナルティ付与
+  - **applyPenalty**: ペナルティ付与ヘルパー関数
+    - 3時間のインキュー制限を付与
+    - `users.banned_until`更新と`penalties`サブコレクション作成
+    - 冪等性確保（同一マッチへの重複ペナルティ防止）
   - 環境変数:
     - `MATCHING_MIN_QUEUE`: 最小キュー人数（デフォルト: 30）
     - `MATCHING_MAX_WAIT_SEC`: 最大待機時間秒（デフォルト: 180）
@@ -178,8 +193,19 @@ src/
 | `queue_status` | string \| null | "waiting" / "matched" / null |
 | `queue_joined_at` | timestamp \| null | キュー参加時刻 |
 | `matched_match_id` | string \| null | マッチID参照（フェーズ1.3実装済み） |
+| `banned_until` | timestamp \| null | ペナルティ終了時刻（通報機能） |
 | `created_at` | timestamp | 作成日時 |
 | `updated_at` | timestamp | 更新日時 |
+
+### users/{userId}/penaltiesサブコレクション（通報機能）
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `match_id` | string | 通報元マッチID |
+| `match_created_at` | timestamp | マッチ作成日時 |
+| `reason` | string | "no_show"（ノーショー） |
+| `penalty_duration_hours` | number | ペナルティ時間（時間単位） |
+| `applied_at` | timestamp | ペナルティ付与日時 |
+| `banned_until` | timestamp | ペナルティ終了時刻 |
 
 ### matchesコレクション（フェーズ1.3実装済み）
 | フィールド | 型 | 説明 |
@@ -201,6 +227,17 @@ src/
 | `team` | string | "first" / "second" |
 | `seat_no` | number | 1-5（チーム内の座席番号） |
 | `joined_at` | timestamp | 参加日時 |
+
+### matches/{matchId}/reportsサブコレクション（通報機能）
+| フィールド | 型 | 説明 |
+|-----------|-----|------|
+| `match_id` | string | マッチID |
+| `reporter_user_id` | string | 通報者ユーザーID |
+| `reported_user_id` | string | 被通報者ユーザーID |
+| `reason` | string | "no_show"（ノーショー） |
+| `match_created_at` | timestamp | マッチ作成日時 |
+| `reported_at` | timestamp | 通報日時 |
+| `screenshot_url` | string \| undefined | スクリーンショットURL（任意） |
 
 ## ビルド出力
 - `dist/`: 本番用ビルド成果物（Firebase Hostingのpublic）
