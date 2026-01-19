@@ -5,6 +5,7 @@ import { AuthProvider } from "./features/auth/AuthContext";
 import { LoginPage } from "./features/auth/LoginPage";
 import { DraftSimulationPage } from "./features/draft/DraftSimulationPage";
 import { MatchProvider } from "./features/draft/MatchContext";
+import { FaqPage } from "./features/faq/FaqPage";
 import { MatchResultPage } from "./features/match/MatchResultPage";
 import { MyPage } from "./features/mypage/MyPage";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
@@ -74,6 +75,14 @@ function App() {
                 element={
                   <Layout>
                     <StatsPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/faq"
+                element={
+                  <Layout>
+                    <FaqPage />
                   </Layout>
                 }
               />
