@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { getUserProfile, updateDisplayName } from "../auth/user";
 
@@ -10,7 +11,8 @@ type RecentResult = {
 };
 
 export function MyPage() {
-  const { user, login } = useAuth();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [displayName, setDisplayName] = useState("");
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -19,6 +21,12 @@ export function MyPage() {
   const [totalWins, setTotalWins] = useState(0);
   const [rating, setRating] = useState(1600);
   const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/", { replace: true });
+    }
+  }, [authLoading, user, navigate]);
 
   useEffect(() => {
     if (user) {
@@ -52,8 +60,6 @@ export function MyPage() {
         setRecentResults(normalizedResults);
         setLoading(false);
       });
-    } else {
-      setLoading(false);
     }
   }, [user]);
 
@@ -64,7 +70,7 @@ export function MyPage() {
     }
   };
 
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div
         className="min-h-full flex items-center justify-center"
@@ -211,27 +217,7 @@ export function MyPage() {
                   )}
                 </div>
               </>
-            ) : (
-              <div className="w-full text-center py-4">
-                <p
-                  className="text-sm mb-4"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
-                  プロフィールを表示するにはログインが必要です
-                </p>
-                <button
-                  type="button"
-                  onClick={login}
-                  className="px-6 py-2 rounded font-medium text-sm transition-colors hover:opacity-90"
-                  style={{
-                    backgroundColor: "var(--color-accent-cyan)",
-                    color: "var(--color-base)",
-                  }}
-                >
-                  ログイン
-                </button>
-              </div>
-            )}
+            ) : null}
           </div>
         </section>
 
