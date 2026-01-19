@@ -90,6 +90,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
 
   const isBanned = useMemo(() => {
     if (!bannedUntil) return false;
+
     return bannedUntil.getTime() > Date.now();
   }, [bannedUntil]);
 
@@ -110,6 +111,36 @@ export function QueueProvider({ children }: QueueProviderProps) {
     if (!user) return;
     await cancelQueueFn(user.uid);
   }, [user]);
+
+  // 最新のqueueStatusをRefで保持（cleanup関数内で参照するため）
+  const latestQueueStatus = useRef(queueStatus);
+  useEffect(() => {
+    latestQueueStatus.current = queueStatus;
+  }, [queueStatus]);
+
+  // ページ離脱/アプリ終了時の処理
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (latestQueueStatus.current === "waiting") {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // アンマウント時（リロード、閉じる、ログアウト等）に待機中ならキャンセル試行
+      // 注意: ブラウザ終了時の非同期処理は保証されない
+      if (latestQueueStatus.current === "waiting") {
+        cancelQueue().catch((err) => {
+          console.error("Failed to auto-cancel queue on unmount:", err);
+        });
+      }
+    };
+  }, [cancelQueue]);
 
   return (
     <QueueContext.Provider
