@@ -337,16 +337,31 @@ export function MyPage() {
                   >
                     <span
                       className="font-semibold"
-                      style={{ color: "var(--color-text-primary)" }}
+                      style={{
+                        color:
+                          item.result === "win"
+                            ? "#22c55e"
+                            : item.result === "loss"
+                              ? "#ef4444"
+                              : "#f59e0b",
+                      }}
                     >
                       {item.result === "win"
-                        ? "勝利"
+                        ? "WIN"
                         : item.result === "loss"
-                          ? "敗北"
-                          : "無効"}
+                          ? "LOSE"
+                          : "INVALID"}
                     </span>
                     <span className="text-xs text-slate-400">
-                      {item.matched_at ? item.matched_at.toLocaleString() : "-"}
+                      {item.matched_at
+                        ? item.matched_at.toLocaleString("ja-JP", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "-"}
                     </span>
                   </li>
                 ))}
