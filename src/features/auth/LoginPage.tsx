@@ -26,7 +26,7 @@ export function LoginPage() {
 		<div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
 			<div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-sm w-full text-center">
 				<h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-					UniteMate Login
+					Unitemate Login
 				</h1>
 				<button
 					type="button"
