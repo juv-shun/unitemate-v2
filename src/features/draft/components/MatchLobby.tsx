@@ -491,11 +491,11 @@ export function MatchLobby() {
               index={1}
             />
           </div>
-          <div className="flex justify-center pt-2">
+          <div className="pt-2">
             <button
               type="button"
               onClick={handleEndMatch}
-              className="px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
+              className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
               style={{
                 backgroundColor: "rgba(239, 68, 68, 0.15)",
                 color: "var(--color-danger)",
