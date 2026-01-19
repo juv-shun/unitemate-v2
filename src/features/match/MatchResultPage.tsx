@@ -120,7 +120,7 @@ export function MatchResultPage() {
         </div>
         <button
           type="button"
-          onClick={() => navigate(`/draft/${matchId}`)}
+          onClick={() => navigate(`/lobby/${matchId}`)}
           className="mt-6 w-full py-3 rounded-lg text-sm font-semibold tracking-wide transition-all"
           style={{
             fontFamily: "var(--font-display)",

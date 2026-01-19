@@ -11,7 +11,7 @@ export function CreateMatchButton() {
 		setIsCreating(true);
 		try {
 			const matchId = await createMatch();
-			navigate(`/draft/${matchId}`);
+			navigate(`/lobby/${matchId}`);
 		} catch (err) {
 			console.error("Failed to create match:", err);
 		} finally {

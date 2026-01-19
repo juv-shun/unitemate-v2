@@ -40,7 +40,7 @@ function App() {
 								}
 							/>
 							<Route
-								path="/draft/:matchId?"
+								path="/lobby/:matchId?"
 								element={
 									<ProtectedRoute>
 										<Layout>

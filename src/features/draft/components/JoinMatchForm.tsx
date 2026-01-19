@@ -8,7 +8,7 @@ export function JoinMatchForm() {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (matchId.trim()) {
-			navigate(`/draft/${matchId.trim()}`);
+			navigate(`/lobby/${matchId.trim()}`);
 		}
 	};
 

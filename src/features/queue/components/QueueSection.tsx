@@ -206,7 +206,7 @@ export function QueueSection() {
             type="button"
             onClick={() => {
               if (matchedMatchId) {
-                navigate(`/draft/${matchedMatchId}`);
+                navigate(`/lobby/${matchedMatchId}`);
               }
             }}
             disabled={!matchedMatchId}

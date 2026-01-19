@@ -22,7 +22,7 @@ export function HomePage() {
 						color: "var(--color-text-primary)",
 					}}
 				>
-					マッチング
+					MATCHMAKING
 				</h1>
 			</header>
 
@@ -37,15 +37,6 @@ export function HomePage() {
 			>
 				{/* キューセクション */}
 				<section className="p-6">
-					<h2
-						className="text-xs font-semibold tracking-wider mb-4"
-						style={{
-							fontFamily: "var(--font-display)",
-							color: "var(--color-text-secondary)",
-						}}
-					>
-						MATCHMAKING
-					</h2>
 					<QueueSection />
 				</section>
 			</main>

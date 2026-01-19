@@ -524,7 +524,7 @@ function TeamDisplay({
                   </span>
                 )}
               </div>
-              {!isSeated && !isCurrentUser && (
+              {!isCurrentUser && (
                 <button
                   type="button"
                   onClick={() => onReport(member.user_id)}
