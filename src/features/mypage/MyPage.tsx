@@ -21,6 +21,7 @@ export function MyPage() {
   const [totalWins, setTotalWins] = useState(0);
   const [rating, setRating] = useState(1600);
   const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -63,6 +64,13 @@ export function MyPage() {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setIsVisible(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
   const handleUpdate = async () => {
     if (user && displayName.trim()) {
       await updateDisplayName(user.uid, displayName);
@@ -83,7 +91,7 @@ export function MyPage() {
 
   return (
     <div
-      className="min-h-full flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8"
+      className="min-h-full flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 relative"
       style={{
         backgroundColor: "var(--color-base)",
         backgroundImage: `
@@ -93,66 +101,132 @@ export function MyPage() {
         backgroundSize: "32px 32px",
       }}
     >
+      {/* Hexagonal grid background pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l15 8.66v17.32L30 34.64 15 25.98V8.66L30 0zm0 52l15-8.66V25.98L30 17.32l-15 8.66v17.36L30 52z' fill='%2306b6d4' fill-rule='evenodd'/%3E%3C/svg%3E")`,
+          backgroundSize: "60px 52px",
+        }}
+      />
+
       {/* ページタイトル */}
-      <header className="w-full max-w-md mb-8">
-        <h1
-          className="text-xl font-bold tracking-wider"
+      <header
+        className="w-full max-w-md mb-8 relative"
+        style={{
+          animation: isVisible ? "fadeInDown 0.5s ease-out both" : "none",
+        }}
+      >
+        <div
+          className="inline-block relative px-4 py-2"
           style={{
-            fontFamily: "var(--font-display)",
-            color: "var(--color-text-primary)",
+            background:
+              "linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(236, 72, 153, 0.1) 100%)",
+            clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
           }}
         >
-          マイページ
-        </h1>
+          <h1
+            className="text-xl font-bold tracking-[0.15em] uppercase"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-accent-cyan)",
+              textShadow: "0 0 20px rgba(6, 182, 212, 0.5)",
+            }}
+          >
+            My Page
+          </h1>
+        </div>
+        {/* Accent line */}
+        <div
+          className="absolute left-0 bottom-0 h-[1px] w-24"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--color-accent-cyan) 0%, transparent 100%)",
+          }}
+        />
       </header>
 
       {/* メインカード */}
       <main
-        className="max-w-md w-full rounded-xl overflow-hidden"
+        className="max-w-md w-full rounded-xl overflow-hidden relative"
         style={{
           backgroundColor: "var(--color-surface)",
           boxShadow:
             "0 4px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+          animation: isVisible ? "slideInFromLeft 0.6s ease-out both" : "none",
         }}
       >
+        {/* Top accent line */}
+        <div
+          className="absolute top-0 left-0 right-0 h-[1px]"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, var(--color-accent-cyan) 50%, transparent 100%)",
+          }}
+        />
+
         {/* プロフィールセクション */}
-        <section className="p-6">
+        <section className="p-6 relative group">
+          {/* Hover glow effect */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at center, rgba(6, 182, 212, 0.05) 0%, transparent 70%)",
+            }}
+          />
+
           <h2
-            className="text-xs font-semibold tracking-wider mb-4"
+            className="text-xs font-semibold tracking-[0.2em] mb-4 uppercase"
             style={{
               fontFamily: "var(--font-display)",
-              color: "var(--color-text-secondary)",
+              color: "var(--color-accent-cyan)",
+              textShadow: "0 0 10px rgba(6, 182, 212, 0.3)",
             }}
           >
-            PROFILE
+            Profile
           </h2>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 relative z-10">
             {user ? (
               <>
-                {/* アバター */}
-                {photoUrl ? (
-                  <img
-                    src={photoUrl}
-                    alt={displayName || "User"}
-                    className="w-14 h-14 rounded-lg object-cover shrink-0"
-                    style={{
-                      border: "1px solid rgba(245, 158, 11, 0.3)",
-                    }}
-                  />
-                ) : (
+                {/* アバター - 八角形スタイル */}
+                <div
+                  className="relative flex-shrink-0 w-16 h-16 flex items-center justify-center transition-transform duration-300 group-hover:scale-105"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(236, 72, 153, 0.1) 100%)",
+                    clipPath:
+                      "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
+                  }}
+                >
                   <div
-                    className="w-14 h-14 rounded-lg flex items-center justify-center text-xl font-bold shrink-0"
+                    className="absolute inset-[2px] flex items-center justify-center overflow-hidden"
                     style={{
-                      backgroundColor: "var(--color-surface-elevated)",
-                      fontFamily: "var(--font-display)",
-                      color: "var(--color-accent-amber)",
-                      border: "1px solid rgba(245, 158, 11, 0.3)",
+                      backgroundColor: "var(--color-surface)",
+                      clipPath:
+                        "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)",
                     }}
                   >
-                    {displayName.charAt(0).toUpperCase()}
+                    {photoUrl ? (
+                      <img
+                        src={photoUrl}
+                        alt={displayName || "User"}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span
+                        className="text-xl font-bold"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          color: "var(--color-accent-amber)",
+                        }}
+                      >
+                        {displayName.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* ユーザー情報 */}
                 <div className="flex-1 min-w-0">
@@ -162,18 +236,19 @@ export function MyPage() {
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        className="w-full px-3 py-2 rounded text-sm focus:outline-none focus:ring-1"
+                        className="w-full px-3 py-2 rounded text-sm focus:outline-none transition-all duration-300"
                         style={{
                           backgroundColor: "var(--color-surface-elevated)",
                           color: "var(--color-text-primary)",
                           border: "1px solid var(--color-accent-cyan)",
+                          boxShadow: "0 0 10px rgba(6, 182, 212, 0.2)",
                         }}
                       />
                       <div className="flex gap-2 justify-end">
                         <button
                           type="button"
                           onClick={() => setIsEditing(false)}
-                          className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium rounded transition-all duration-300 hover:bg-slate-700"
                           style={{
                             color: "var(--color-text-secondary)",
                             border: "1px solid var(--color-text-secondary)",
@@ -184,10 +259,11 @@ export function MyPage() {
                         <button
                           type="button"
                           onClick={handleUpdate}
-                          className="px-3 py-1.5 text-xs font-medium rounded transition-colors"
+                          className="px-3 py-1.5 text-xs font-medium rounded transition-all duration-300"
                           style={{
                             backgroundColor: "var(--color-accent-cyan)",
                             color: "var(--color-base)",
+                            boxShadow: "0 0 15px rgba(6, 182, 212, 0.4)",
                           }}
                         >
                           保存
@@ -208,10 +284,25 @@ export function MyPage() {
                       <button
                         type="button"
                         onClick={() => setIsEditing(true)}
-                        className="mt-1 text-xs font-medium transition-colors hover:underline"
-                        style={{ color: "var(--color-accent-cyan)" }}
+                        className="mt-1 text-xs font-medium transition-all duration-300 edit-link"
+                        style={{
+                          color: "var(--color-accent-cyan)",
+                          textShadow: "0 0 10px rgba(6, 182, 212, 0.3)",
+                        }}
                       >
-                        表示名を編集
+                        <span className="relative">
+                          表示名を編集
+                          <span
+                            className="absolute left-0 -bottom-0.5 w-0 h-[1px] transition-all duration-300 edit-link-underline"
+                            style={{
+                              background:
+                                "linear-gradient(90deg, var(--color-accent-cyan), transparent)",
+                            }}
+                          />
+                        </span>
+                        <span className="ml-1 inline-block transition-transform duration-300 edit-link-arrow">
+                          →
+                        </span>
                       </button>
                     </>
                   )}
@@ -219,129 +310,164 @@ export function MyPage() {
               </>
             ) : null}
           </div>
+
+          {/* Corner accent */}
+          <div
+            className="absolute top-0 right-0 w-2 h-2 opacity-50 group-hover:opacity-100 transition-opacity duration-300"
+            style={{
+              background: "var(--color-accent-cyan)",
+              boxShadow: "0 0 8px var(--color-accent-cyan)",
+            }}
+          />
         </section>
 
+        {/* レーティングセクション */}
         <section
-          className="p-6 border-t"
-          style={{ borderColor: "rgba(148, 163, 184, 0.12)" }}
+          className="p-6 relative group"
+          style={{
+            borderTop: "1px solid rgba(6, 182, 212, 0.2)",
+            animation: isVisible
+              ? "slideInFromLeft 0.6s ease-out 0.1s both"
+              : "none",
+          }}
         >
+          {/* Hover glow effect */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(circle at center, rgba(6, 182, 212, 0.05) 0%, transparent 70%)",
+            }}
+          />
+
           <h2
-            className="text-xs font-semibold tracking-wider mb-4"
+            className="text-xs font-semibold tracking-[0.2em] mb-4 uppercase"
             style={{
               fontFamily: "var(--font-display)",
-              color: "var(--color-text-secondary)",
+              color: "var(--color-accent-cyan)",
+              textShadow: "0 0 10px rgba(6, 182, 212, 0.3)",
             }}
           >
-            RATING
+            Rating
           </h2>
           <div
-            className="rounded-lg px-4 py-4 text-center"
+            className="rounded-lg px-4 py-4 text-center relative overflow-hidden transition-all duration-300 group-hover:scale-[1.02]"
             style={{
               backgroundColor: "rgba(15, 23, 42, 0.45)",
-              border: "1px solid rgba(148, 163, 184, 0.2)",
+              border: "1px solid rgba(6, 182, 212, 0.2)",
+              clipPath:
+                "polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px))",
             }}
           >
             <div
-              className="text-3xl font-bold tracking-wide"
+              className="text-4xl font-bold tracking-wide tabular-nums"
               style={{
                 fontFamily: "var(--font-display)",
                 color: "var(--color-text-primary)",
+                textShadow: "0 0 20px rgba(6, 182, 212, 0.3)",
               }}
             >
               {rating}
             </div>
+            {/* Inner glow on hover */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(circle at center, rgba(6, 182, 212, 0.1) 0%, transparent 70%)",
+                boxShadow: "inset 0 0 20px rgba(6, 182, 212, 0.1)",
+              }}
+            />
           </div>
+
+          {/* Corner accent */}
+          <div
+            className="absolute top-0 right-0 w-2 h-2 opacity-50 group-hover:opacity-100 transition-opacity duration-300"
+            style={{
+              background: "var(--color-accent-cyan)",
+              boxShadow: "0 0 8px var(--color-accent-cyan)",
+            }}
+          />
         </section>
 
+        {/* 結果セクション */}
         <section
-          className="p-6 border-t"
-          style={{ borderColor: "rgba(148, 163, 184, 0.12)" }}
+          className="p-6 relative"
+          style={{
+            borderTop: "1px solid rgba(6, 182, 212, 0.2)",
+            animation: isVisible
+              ? "slideInFromLeft 0.6s ease-out 0.2s both"
+              : "none",
+          }}
         >
           <h2
-            className="text-xs font-semibold tracking-wider mb-4"
+            className="text-xs font-semibold tracking-[0.2em] mb-4 uppercase"
             style={{
               fontFamily: "var(--font-display)",
-              color: "var(--color-text-secondary)",
+              color: "var(--color-accent-cyan)",
+              textShadow: "0 0 10px rgba(6, 182, 212, 0.3)",
             }}
           >
-            RESULTS
+            Results
           </h2>
           <div className="grid grid-cols-3 gap-3 text-center">
-            <div
-              className="rounded-lg px-3 py-3"
-              style={{
-                backgroundColor: "rgba(15, 23, 42, 0.45)",
-                border: "1px solid rgba(148, 163, 184, 0.2)",
-              }}
-            >
+            {[
+              { label: "MATCHES", value: totalMatches, delay: 0 },
+              { label: "WINS", value: totalWins, delay: 0.05 },
+              {
+                label: "WIN RATE",
+                value:
+                  totalMatches > 0
+                    ? `${((totalWins / totalMatches) * 100).toFixed(1)}%`
+                    : "0.0%",
+                delay: 0.1,
+              },
+            ].map((stat) => (
               <div
-                className="text-xs font-semibold"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                MATCHES
-              </div>
-              <div
-                className="text-lg font-bold"
+                key={stat.label}
+                className="group relative rounded-lg px-3 py-3 transition-all duration-300 hover:scale-105"
                 style={{
-                  fontFamily: "var(--font-display)",
-                  color: "var(--color-text-primary)",
+                  backgroundColor: "rgba(15, 23, 42, 0.45)",
+                  border: "1px solid rgba(6, 182, 212, 0.2)",
+                  clipPath:
+                    "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                  animation: isVisible
+                    ? `fadeInUp 0.5s ease-out ${0.3 + stat.delay}s both`
+                    : "none",
                 }}
               >
-                {totalMatches}
+                {/* Hover glow */}
+                <div
+                  className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                  style={{
+                    background:
+                      "radial-gradient(circle at center, rgba(6, 182, 212, 0.15) 0%, transparent 70%)",
+                    boxShadow: "inset 0 0 15px rgba(6, 182, 212, 0.2)",
+                  }}
+                />
+                <div
+                  className="text-xs font-semibold relative z-10"
+                  style={{ color: "var(--color-text-secondary)" }}
+                >
+                  {stat.label}
+                </div>
+                <div
+                  className="text-lg font-bold relative z-10 tabular-nums"
+                  style={{
+                    fontFamily: "var(--font-display)",
+                    color: "var(--color-text-primary)",
+                  }}
+                >
+                  {stat.value}
+                </div>
               </div>
-            </div>
-            <div
-              className="rounded-lg px-3 py-3"
-              style={{
-                backgroundColor: "rgba(15, 23, 42, 0.45)",
-                border: "1px solid rgba(148, 163, 184, 0.2)",
-              }}
-            >
-              <div
-                className="text-xs font-semibold"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                WINS
-              </div>
-              <div
-                className="text-lg font-bold"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {totalWins}
-              </div>
-            </div>
-            <div
-              className="rounded-lg px-3 py-3"
-              style={{
-                backgroundColor: "rgba(15, 23, 42, 0.45)",
-                border: "1px solid rgba(148, 163, 184, 0.2)",
-              }}
-            >
-              <div
-                className="text-xs font-semibold"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
-                WIN RATE
-              </div>
-              <div
-                className="text-lg font-bold"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  color: "var(--color-text-primary)",
-                }}
-              >
-                {totalMatches > 0
-                  ? `${((totalWins / totalMatches) * 100).toFixed(1)}%`
-                  : "0.0%"}
-              </div>
-            </div>
+            ))}
           </div>
-          <div className="mt-4 space-y-2">
+
+          {/* Recent Matches */}
+          <div className="mt-6 space-y-2">
             <div
-              className="text-xs font-semibold tracking-wider"
+              className="text-xs font-semibold tracking-[0.15em] uppercase"
               style={{
                 fontFamily: "var(--font-display)",
                 color: "var(--color-text-secondary)",
@@ -355,67 +481,162 @@ export function MyPage() {
               </div>
             ) : (
               <ul className="space-y-2">
-                {recentResults.map((item) => (
-                  <li
-                    key={item.match_id}
-                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
-                    style={{
-                      backgroundColor: "rgba(15, 23, 42, 0.4)",
-                      border: "1px solid rgba(148, 163, 184, 0.15)",
-                    }}
-                  >
-                    <span
-                      className="font-semibold"
+                {recentResults.map((item, index) => {
+                  const resultColor =
+                    item.result === "win"
+                      ? "#22c55e"
+                      : item.result === "loss"
+                        ? "#ef4444"
+                        : "#f59e0b";
+
+                  return (
+                    <li
+                      key={item.match_id}
+                      className="group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all duration-300 hover:scale-[1.02]"
                       style={{
-                        color:
-                          item.result === "win"
-                            ? "#22c55e"
-                            : item.result === "loss"
-                              ? "#ef4444"
-                              : "#f59e0b",
+                        backgroundColor: "rgba(15, 23, 42, 0.4)",
+                        border: "1px solid rgba(6, 182, 212, 0.15)",
+                        clipPath:
+                          "polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px))",
+                        animation: isVisible
+                          ? `slideInFromLeft 0.4s ease-out ${0.4 + index * 0.03}s both`
+                          : "none",
                       }}
                     >
-                      {item.result === "win"
-                        ? "WIN"
-                        : item.result === "loss"
-                          ? "LOSE"
-                          : "INVALID"}
-                    </span>
-                    <div className="ml-auto flex items-center gap-3">
-                      <span className="text-xs text-slate-400">
-                        {item.matched_at
-                          ? item.matched_at.toLocaleString("ja-JP", {
-                              year: "numeric",
-                              month: "2-digit",
-                              day: "2-digit",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })
-                          : "-"}
-                      </span>
-                      <span
-                        className="text-sm font-semibold tabular-nums"
+                      {/* Hover glow effect */}
+                      <div
+                        className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                         style={{
-                          color:
-                            item.rating_delta > 0
-                              ? "#22c55e"
-                              : item.rating_delta < 0
-                                ? "#ef4444"
-                                : "#f59e0b",
+                          background: `radial-gradient(circle at left, ${resultColor}15 0%, transparent 70%)`,
+                          boxShadow: `inset 0 0 15px ${resultColor}10`,
+                        }}
+                      />
+
+                      {/* Result badge */}
+                      <span
+                        className="font-bold tracking-wider relative z-10 transition-all duration-300 group-hover:scale-110"
+                        style={{
+                          color: resultColor,
+                          textShadow: `0 0 10px ${resultColor}50`,
+                          fontFamily: "var(--font-display)",
                         }}
                       >
-                        {item.rating_delta > 0
-                          ? `+${item.rating_delta}`
-                          : `${item.rating_delta}`}
+                        {item.result === "win"
+                          ? "WIN"
+                          : item.result === "loss"
+                            ? "LOSE"
+                            : "INVALID"}
                       </span>
-                    </div>
-                  </li>
-                ))}
+
+                      <div className="ml-auto flex items-center gap-3 relative z-10">
+                        <span className="text-xs text-slate-400">
+                          {item.matched_at
+                            ? item.matched_at.toLocaleString("ja-JP", {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "-"}
+                        </span>
+                        <span
+                          className="text-sm font-bold tabular-nums transition-all duration-300 group-hover:scale-110"
+                          style={{
+                            color: resultColor,
+                            textShadow: `0 0 8px ${resultColor}40`,
+                            fontFamily: "var(--font-display)",
+                          }}
+                        >
+                          {item.rating_delta > 0
+                            ? `+${item.rating_delta}`
+                            : `${item.rating_delta}`}
+                        </span>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
         </section>
+
+        {/* Bottom accent line */}
+        <div className="px-6 pb-4">
+          <div className="flex items-center gap-2">
+            <div
+              className="h-[1px] flex-1"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(6, 182, 212, 0.3) 50%, transparent 100%)",
+              }}
+            />
+            <div
+              className="w-1.5 h-1.5 rounded-full animate-pulse"
+              style={{
+                backgroundColor: "var(--color-accent-cyan)",
+                boxShadow: "0 0 8px var(--color-accent-cyan)",
+              }}
+            />
+            <div
+              className="h-[1px] flex-1"
+              style={{
+                background:
+                  "linear-gradient(90deg, transparent 0%, rgba(6, 182, 212, 0.3) 50%, transparent 100%)",
+              }}
+            />
+          </div>
+        </div>
       </main>
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes slideInFromLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @keyframes fadeInDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(15px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .edit-link:hover {
+          color: #ffffff;
+          text-shadow: 0 0 15px rgba(6, 182, 212, 0.8);
+        }
+
+        .edit-link:hover .edit-link-underline {
+          width: 100%;
+        }
+
+        .edit-link:hover .edit-link-arrow {
+          transform: translateX(4px);
+        }
+      `}</style>
     </div>
   );
 }
