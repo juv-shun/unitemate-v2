@@ -12,7 +12,6 @@ import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
 import { QueueProvider } from "./features/queue/QueueContext";
 import { RankingPage } from "./features/ranking/RankingPage";
-import { StatsPage } from "./features/stats/StatsPage";
 
 function App() {
   return (
@@ -67,14 +66,6 @@ function App() {
                 element={
                   <Layout>
                     <RankingPage />
-                  </Layout>
-                }
-              />
-              <Route
-                path="/stats"
-                element={
-                  <Layout>
-                    <StatsPage />
                   </Layout>
                 }
               />
