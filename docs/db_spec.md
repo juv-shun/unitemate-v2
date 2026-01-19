@@ -70,7 +70,7 @@
 | --- | --- | --- |
 | phase | string | phase1 / phase2 |
 | source_type | string | manual / auto |
-| status | string | waiting / draft_pending / drafting / lobby_pending / completed / invalid |
+| status | string | waiting / lobby_pending / completed |
 | capacity | number | 10固定 |
 | auto_start | boolean | true固定 |
 | first_team | string | first / second |
@@ -79,7 +79,17 @@
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
 
-補足: フェーズ1の自動マッチ成立時は status を lobby_pending とする（draft_pending はドラフト実装時に使用）。
+補足: フェーズ1の自動マッチ成立時は status を lobby_pending とする。
+
+状態遷移（matches.status）:
+
+```
+waiting -> lobby_pending -> completed
+```
+
+変更タイミング:
+- waiting -> lobby_pending: 10人マッチ成立時（自動マッチング生成時に設定）
+- lobby_pending -> completed: 試合結果が確定した時点（多数決即時確定 or マッチング時刻から40分タイムアウト確定）
 
 ---
 
@@ -299,7 +309,7 @@ Elo反映履歴（ユーザー配下サブコレクション）。
 ### 5.2 フェーズ1 手動作成ドラフトマッチ
 1. matches を作成（source_type = manual, status = waiting）  
 2. matches/{matchId}/members に participant を追加  
-3. participant が10人揃い次第、status を draft_pending に更新  
+3. participant が10人揃い次第、status を lobby_pending に更新  
 4. draft_sessions 作成 → turns を生成  
 5. actions で結果確定  
 6. PICK確定時に users/{userId}/pick_histories を追加  
