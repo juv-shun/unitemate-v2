@@ -30,6 +30,9 @@ export interface Match {
 	first_team?: Team;
 	lobby_id?: string; // 8桁数字（先頭0許可）
 	lobby_updated_at?: Date; // ロビーID更新時刻
+	final_result?: "first_win" | "second_win" | "invalid"; // 結果確定
+	finalized_at?: Date; // 結果確定時刻
+	finalized_reason?: "threshold" | "timeout"; // 確定理由
 	created_at: Date;
 	updated_at: Date;
 }

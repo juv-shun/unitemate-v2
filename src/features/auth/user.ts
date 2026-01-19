@@ -19,9 +19,11 @@ export async function ensureUserExists(
 	if (!userSnap.exists()) {
 		await setDoc(userRef, {
 			display_name: user.displayName || "Unknown User",
-			email: user.email,
 			photo_url: user.photoURL,
 			is_onboarded: false,
+			total_matches: 0,
+			total_wins: 0,
+			recent_results: [],
 			created_at: serverTimestamp(),
 			updated_at: serverTimestamp(),
 		});
@@ -52,7 +54,18 @@ export async function updateDisplayName(
 export async function getUserProfile(
 	uid: string,
 ): Promise<
-	{ display_name?: string; is_onboarded?: boolean; photo_url?: string } | null
+	{
+		display_name?: string;
+		is_onboarded?: boolean;
+		photo_url?: string;
+		total_matches?: number;
+		total_wins?: number;
+		recent_results?: Array<{
+			match_id?: string;
+			result?: "win" | "loss" | "invalid";
+			matched_at?: { toDate?: () => Date };
+		}>;
+	} | null
 > {
 	const userRef = doc(db, "users", uid);
 	const userSnap = await getDoc(userRef);

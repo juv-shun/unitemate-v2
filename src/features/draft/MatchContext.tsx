@@ -201,9 +201,9 @@ export function MatchProvider({ children }: MatchProviderProps) {
 
 	const leaveMatch = useCallback(
 		async (matchResult: MatchResult): Promise<void> => {
-			if (!user || !currentMatchId) return;
+			if (!currentMatchId) return;
 			try {
-				await leaveMatchFn(currentMatchId, user.uid, matchResult);
+				await leaveMatchFn(currentMatchId, matchResult);
 				setCurrentMatchId(null);
 			} catch (err) {
 				const errorMessage =
@@ -211,7 +211,9 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				setError(errorMessage);
 				throw err;
 			}
-	}, [user, currentMatchId]);
+		},
+		[currentMatchId],
+	);
 
 	const changeSeat = useCallback(
 		async (newTeam: Team, newSeatNo: number): Promise<void> => {

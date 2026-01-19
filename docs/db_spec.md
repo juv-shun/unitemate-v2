@@ -44,8 +44,18 @@
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
 | display_name | string | 表示名 |
+| photo_url | string | プロフィール画像URL |
+| is_onboarded | boolean | 初期ユーザー名のセットアップ完了フラグ |
+| total_matches | number | 試合数（結果確定済みのみ） |
+| total_wins | number | 勝利数（結果確定済みのみ） |
+| recent_results | array | 直近20試合の結果（結果確定済みのみ） |
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
+
+recent_results 要素:
+- match_id: string
+- result: win / loss / invalid
+- matched_at: timestamp（マッチング時刻）
 
 ---
 
@@ -76,6 +86,9 @@
 | first_team | string | first / second |
 | lobby_id | string | ロビーID（8桁数字、先頭0許可、後勝ち上書き） |
 | lobby_updated_at | timestamp | ロビーID更新時刻 |
+| final_result | string | first_win / second_win / invalid |
+| finalized_at | timestamp | 結果確定時刻 |
+| finalized_reason | string | threshold / timeout |
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
 

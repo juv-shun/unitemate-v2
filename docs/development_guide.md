@@ -109,7 +109,6 @@ Emulator UI を使って Firestore のデータを確認・編集できます。
 | フィールド名 | 型 | 説明 |
 |-------------|-----|------|
 | `display_name` | string | 表示名 |
-| `email` | string | メールアドレス |
 | `queue_status` | string/null | キュー状態（`waiting` または `null`） |
 | `queue_joined_at` | timestamp/null | キュー開始時刻 |
 

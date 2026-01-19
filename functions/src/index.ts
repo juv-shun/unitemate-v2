@@ -1,9 +1,5 @@
 import { initializeApp } from "firebase-admin/app";
-import {
-  FieldValue,
-  getFirestore,
-  type Timestamp,
-} from "firebase-admin/firestore";
+import { FieldValue, getFirestore, Timestamp } from "firebase-admin/firestore";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
 import { onSchedule } from "firebase-functions/v2/scheduler";
@@ -22,6 +18,17 @@ type Assignment = {
   userId: string;
   team: "first" | "second";
   seatNo: number;
+};
+
+type MatchResult = "win" | "loss" | "invalid";
+type FinalResult = "first_win" | "second_win" | "invalid";
+type FinalizeReason = "threshold" | "timeout";
+
+type MatchMember = {
+  user_id: string;
+  role: "participant" | "spectator";
+  team?: "first" | "second";
+  match_result?: MatchResult;
 };
 
 const getEnvInt = (name: string, fallback: number): number => {
@@ -117,6 +124,168 @@ const commitMatch = async (
 
     return matchRef.id;
   });
+};
+
+const tallyMatchResults = (
+  members: MatchMember[],
+): { counts: Record<FinalResult, number>; totalVotes: number } => {
+  const counts: Record<FinalResult, number> = {
+    first_win: 0,
+    second_win: 0,
+    invalid: 0,
+  };
+
+  for (const member of members) {
+    if (member.role !== "participant") continue;
+    if (!member.match_result) continue;
+    if (member.match_result === "invalid") {
+      counts.invalid += 1;
+      continue;
+    }
+    const team = member.team;
+    if (!team) continue;
+    if (team === "first") {
+      counts[member.match_result === "win" ? "first_win" : "second_win"] += 1;
+    } else {
+      counts[member.match_result === "win" ? "second_win" : "first_win"] += 1;
+    }
+  }
+
+  const totalVotes = counts.first_win + counts.second_win + counts.invalid;
+  return { counts, totalVotes };
+};
+
+const decideFinalResult = (counts: Record<FinalResult, number>): FinalResult => {
+  const maxValue = Math.max(counts.first_win, counts.second_win, counts.invalid);
+  const winners = (Object.keys(counts) as FinalResult[]).filter(
+    (key) => counts[key] === maxValue,
+  );
+  return winners.length === 1 ? winners[0] : "invalid";
+};
+
+const toMemberOutcome = (
+  team: "first" | "second" | undefined,
+  finalResult: FinalResult,
+): MatchResult => {
+  if (finalResult === "invalid") return "invalid";
+  if (!team) return "invalid";
+  if (team === "first") {
+    return finalResult === "first_win" ? "win" : "loss";
+  }
+  return finalResult === "second_win" ? "win" : "loss";
+};
+
+const updateUserStats = async ({
+  members,
+  matchId,
+  finalResult,
+  decidedAt,
+}: {
+  members: MatchMember[];
+  matchId: string;
+  finalResult: FinalResult;
+  decidedAt: Timestamp;
+}): Promise<void> => {
+  const participants = members.filter((member) => member.role === "participant");
+  await Promise.all(
+    participants.map(async (member) => {
+      const userRef = db.collection("users").doc(member.user_id);
+      await db.runTransaction(async (transaction) => {
+        const userSnap = await transaction.get(userRef);
+        const data = userSnap.exists ? userSnap.data() : {};
+        const totalMatches =
+          typeof data?.total_matches === "number" ? data.total_matches : 0;
+        const totalWins =
+          typeof data?.total_wins === "number" ? data.total_wins : 0;
+        const recentResults = Array.isArray(data?.recent_results)
+          ? data.recent_results
+          : [];
+        const alreadyRecorded = recentResults.some(
+          (item: { match_id?: string }) => item?.match_id === matchId,
+        );
+        if (alreadyRecorded) return;
+
+        const outcome = toMemberOutcome(member.team, finalResult);
+        const nextResults = [
+          { match_id: matchId, result: outcome, matched_at: decidedAt },
+          ...recentResults,
+        ].slice(0, 20);
+
+        transaction.set(
+          userRef,
+          {
+            total_matches: totalMatches + 1,
+            total_wins: totalWins + (outcome === "win" ? 1 : 0),
+            recent_results: nextResults,
+            updated_at: FieldValue.serverTimestamp(),
+          },
+          { merge: true },
+        );
+      });
+    }),
+  );
+};
+
+const finalizeMatch = async ({
+  matchId,
+  reason,
+  minVotes,
+  forceFinalize,
+}: {
+  matchId: string;
+  reason: FinalizeReason;
+  minVotes: number;
+  forceFinalize: boolean;
+}): Promise<{ finalized: boolean; finalResult?: FinalResult }> => {
+  const matchRef = db.collection("matches").doc(matchId);
+  const matchSnap = await matchRef.get();
+  if (!matchSnap.exists) return { finalized: false };
+  const matchData = matchSnap.data();
+  if (matchData?.status !== "lobby_pending") {
+    return { finalized: false };
+  }
+
+  const membersSnap = await matchRef
+    .collection("members")
+    .where("role", "==", "participant")
+    .get();
+  const members = membersSnap.docs.map((doc) => doc.data() as MatchMember);
+  const { counts, totalVotes } = tallyMatchResults(members);
+
+  if (!forceFinalize && totalVotes < minVotes) {
+    return { finalized: false };
+  }
+
+  const finalResult = decideFinalResult(counts);
+  const decidedAt = matchData?.created_at ?? Timestamp.now();
+  const finalizedAt = Timestamp.now();
+
+  const finalized = await db.runTransaction(async (transaction) => {
+    const freshSnap = await transaction.get(matchRef);
+    if (!freshSnap.exists) return false;
+    const freshData = freshSnap.data();
+    if (freshData?.status !== "lobby_pending") return false;
+
+    transaction.update(matchRef, {
+      status: "completed",
+      final_result: finalResult,
+      finalized_at: finalizedAt,
+      finalized_reason: reason,
+      updated_at: FieldValue.serverTimestamp(),
+    });
+    return true;
+  });
+
+  if (finalized) {
+    await updateUserStats({
+      members,
+      matchId,
+      finalResult,
+      decidedAt,
+    });
+  }
+
+  return { finalized, finalResult };
 };
 
 export const runMatchmaking = onSchedule("every 1 minutes", async () => {
@@ -337,5 +506,85 @@ export const unsetSeated = onCall(
     });
 
     return { success: true };
+  },
+);
+
+/**
+ * 試合結果の報告（即時確定を試行）
+ */
+export const submitMatchResult = onCall(
+  { region: "asia-northeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "認証が必要です");
+    }
+    const { matchId, matchResult } = request.data;
+    const userId = request.auth.uid;
+
+    if (!["win", "loss", "invalid"].includes(matchResult)) {
+      throw new HttpsError("invalid-argument", "試合結果が不正です");
+    }
+
+    const matchRef = db.collection("matches").doc(matchId);
+    const memberRef = matchRef.collection("members").doc(userId);
+
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      throw new HttpsError(
+        "permission-denied",
+        "このマッチの参加者ではありません",
+      );
+    }
+    const memberData = memberSnap.data() as MatchMember;
+    if (memberData.role !== "participant") {
+      throw new HttpsError("permission-denied", "参加者のみ報告できます");
+    }
+
+    await memberRef.update({
+      match_result: matchResult,
+      match_left_at: FieldValue.serverTimestamp(),
+    });
+
+    const result = await finalizeMatch({
+      matchId,
+      reason: "threshold",
+      minVotes: 7,
+      forceFinalize: false,
+    });
+
+    return { success: true, finalized: result.finalized, result: result.finalResult };
+  },
+);
+
+/**
+ * 結果確定タイムアウト処理（40分）
+ */
+export const finalizeMatchesByTimeout = onSchedule(
+  "every 1 minutes",
+  async () => {
+    const cutoff = Timestamp.fromMillis(Date.now() - 40 * 60 * 1000);
+    const matchesSnap = await db
+      .collection("matches")
+      .where("status", "==", "lobby_pending")
+      .where("created_at", "<=", cutoff)
+      .get();
+
+    if (matchesSnap.empty) {
+      console.log("no matches to finalize");
+      return;
+    }
+
+    for (const matchDoc of matchesSnap.docs) {
+      const matchId = matchDoc.id;
+      const result = await finalizeMatch({
+        matchId,
+        reason: "timeout",
+        minVotes: 0,
+        forceFinalize: true,
+      });
+      if (result.finalized) {
+        console.log(`match finalized by timeout: ${matchId}`);
+      }
+    }
   },
 );

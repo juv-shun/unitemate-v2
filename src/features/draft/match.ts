@@ -300,17 +300,14 @@ export async function joinAsSpectator(
  */
 export async function leaveMatch(
 	matchId: string,
-	userId: string,
 	matchResult: MatchResult,
-): Promise<void> {
-	const memberRef = doc(db, "matches", matchId, "members", userId);
+): Promise<{ finalized?: boolean; result?: string }> {
 	if (!["win", "loss", "invalid"].includes(matchResult)) {
 		throw new Error("無効な試合結果です");
 	}
-	await updateDoc(memberRef, {
-		match_result: matchResult,
-		match_left_at: serverTimestamp(),
-	});
+	const fn = httpsCallable(functions, "submitMatchResult");
+	const result = await fn({ matchId, matchResult });
+	return result.data as { finalized?: boolean; result?: string };
 }
 
 /**
@@ -614,6 +611,9 @@ export function subscribeToMatch(
 					first_team: data.first_team,
 					lobby_id: data.lobby_id,
 					lobby_updated_at: data.lobby_updated_at?.toDate(),
+					final_result: data.final_result,
+					finalized_at: data.finalized_at?.toDate(),
+					finalized_reason: data.finalized_reason,
 					created_at: data.created_at?.toDate(),
 					updated_at: data.updated_at?.toDate(),
 				});
