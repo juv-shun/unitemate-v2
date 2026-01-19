@@ -13,6 +13,7 @@ setGlobalOptions({ region: "asia-northeast1" });
 type QueueUser = {
   id: string;
   queueJoinedAt: Timestamp | null;
+  rating: number;
 };
 
 type Assignment = {
@@ -32,6 +33,9 @@ type MatchMember = {
   match_result?: MatchResult;
 };
 
+const DEFAULT_RATING = 1600;
+const K_FACTOR = 32;
+
 const getEnvInt = (name: string, fallback: number): number => {
   const raw = process.env[name];
   if (!raw) return fallback;
@@ -39,13 +43,70 @@ const getEnvInt = (name: string, fallback: number): number => {
   return Number.isNaN(value) ? fallback : value;
 };
 
-const shuffle = <T>(items: T[]): T[] => {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+const normalizeRating = (value: unknown): number => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return Math.round(value);
   }
-  return result;
+  return DEFAULT_RATING;
+};
+
+const computeRatingDeltas = (
+  members: MatchMember[],
+  ratings: Record<string, number>,
+  finalResult: FinalResult,
+): Record<string, number> => {
+  const participants = members.filter(
+    (member) => member.role === "participant" && member.team,
+  );
+
+  if (finalResult === "invalid") {
+    return Object.fromEntries(
+      participants.map((member) => [member.user_id, 0]),
+    );
+  }
+
+  const firstTeam = participants
+    .filter((member) => member.team === "first")
+    .sort(
+      (a, b) =>
+        (ratings[b.user_id] ?? DEFAULT_RATING) -
+        (ratings[a.user_id] ?? DEFAULT_RATING),
+    );
+  const secondTeam = participants
+    .filter((member) => member.team === "second")
+    .sort(
+      (a, b) =>
+        (ratings[b.user_id] ?? DEFAULT_RATING) -
+        (ratings[a.user_id] ?? DEFAULT_RATING),
+    );
+
+  const pairCount = Math.min(firstTeam.length, secondTeam.length);
+  const firstScore = finalResult === "first_win" ? 1 : 0;
+  const secondScore = 1 - firstScore;
+  const deltas: Record<string, number> = {};
+
+  for (let i = 0; i < pairCount; i += 1) {
+    const first = firstTeam[i];
+    const second = secondTeam[i];
+    const firstRating = ratings[first.user_id] ?? DEFAULT_RATING;
+    const secondRating = ratings[second.user_id] ?? DEFAULT_RATING;
+    const expectedFirst =
+      1 / (1 + 10 ** ((secondRating - firstRating) / 400));
+    const expectedSecond = 1 - expectedFirst;
+    const deltaFirst = Math.round(K_FACTOR * (firstScore - expectedFirst));
+    const deltaSecond = Math.round(K_FACTOR * (secondScore - expectedSecond));
+
+    deltas[first.user_id] = deltaFirst;
+    deltas[second.user_id] = deltaSecond;
+  }
+
+  for (const member of participants) {
+    if (!(member.user_id in deltas)) {
+      deltas[member.user_id] = 0;
+    }
+  }
+
+  return deltas;
 };
 
 const shouldRunMatching = (
@@ -64,11 +125,25 @@ const shouldRunMatching = (
 };
 
 const buildAssignments = (selected: QueueUser[]): Assignment[] => {
-  const shuffled = shuffle(selected);
-  return shuffled.map((user, index) => {
-    const team = index < 5 ? "first" : "second";
-    const seatNo = index < 5 ? index + 1 : index - 4;
-    return { userId: user.id, team, seatNo };
+  const ordered = [...selected].sort((a, b) => b.rating - a.rating);
+  const pickOrder: Array<"first" | "second"> = [
+    "first",
+    "second",
+    "second",
+    "first",
+    "first",
+    "second",
+    "second",
+    "first",
+    "first",
+    "second",
+  ];
+  const seatCounters = { first: 0, second: 0 };
+
+  return ordered.map((user, index) => {
+    const team = pickOrder[index] ?? (index % 2 === 0 ? "first" : "second");
+    seatCounters[team] += 1;
+    return { userId: user.id, team, seatNo: seatCounters[team] };
   });
 };
 
@@ -92,7 +167,7 @@ const commitMatch = async (
     }
 
     transaction.set(matchRef, {
-      phase: "phase1",
+      phase: "phase3",
       source_type: "auto",
       status: "lobby_pending",
       capacity: 10,
@@ -188,43 +263,75 @@ const updateUserStats = async ({
   decidedAt: Timestamp;
 }): Promise<void> => {
   const participants = members.filter((member) => member.role === "participant");
-  await Promise.all(
-    participants.map(async (member) => {
-      const userRef = db.collection("users").doc(member.user_id);
-      await db.runTransaction(async (transaction) => {
-        const userSnap = await transaction.get(userRef);
-        const data = userSnap.exists ? userSnap.data() : {};
-        const totalMatches =
-          typeof data?.total_matches === "number" ? data.total_matches : 0;
-        const totalWins =
-          typeof data?.total_wins === "number" ? data.total_wins : 0;
-        const recentResults = Array.isArray(data?.recent_results)
-          ? data.recent_results
-          : [];
-        const alreadyRecorded = recentResults.some(
-          (item: { match_id?: string }) => item?.match_id === matchId,
-        );
-        if (alreadyRecorded) return;
+  if (participants.length === 0) return;
 
-        const outcome = toMemberOutcome(member.team, finalResult);
-        const nextResults = [
-          { match_id: matchId, result: outcome, matched_at: decidedAt },
-          ...recentResults,
-        ].slice(0, 20);
-
-        transaction.set(
-          userRef,
-          {
-            total_matches: totalMatches + 1,
-            total_wins: totalWins + (outcome === "win" ? 1 : 0),
-            recent_results: nextResults,
-            updated_at: FieldValue.serverTimestamp(),
-          },
-          { merge: true },
-        );
-      });
-    }),
+  const userRefs = participants.map((member) =>
+    db.collection("users").doc(member.user_id),
   );
+
+  await db.runTransaction(async (transaction) => {
+    const userSnaps = await Promise.all(
+      userRefs.map((userRef) => transaction.get(userRef)),
+    );
+    const userData = userSnaps.map((snap) => (snap.exists ? snap.data() : {}));
+    const alreadyRecorded = userData.some((data) => {
+      const recentResults = Array.isArray(data?.recent_results)
+        ? data.recent_results
+        : [];
+      return recentResults.some(
+        (item: { match_id?: string }) => item?.match_id === matchId,
+      );
+    });
+    if (alreadyRecorded) return;
+
+    const ratingMap = Object.fromEntries(
+      participants.map((member, index) => [
+        member.user_id,
+        normalizeRating(userData[index]?.rating),
+      ]),
+    );
+    const ratingDeltas = computeRatingDeltas(
+      participants,
+      ratingMap,
+      finalResult,
+    );
+
+    userSnaps.forEach((snap, index) => {
+      const member = participants[index];
+      const data = snap.exists ? snap.data() : {};
+      const totalMatches =
+        typeof data?.total_matches === "number" ? data.total_matches : 0;
+      const totalWins =
+        typeof data?.total_wins === "number" ? data.total_wins : 0;
+      const recentResults = Array.isArray(data?.recent_results)
+        ? data.recent_results
+        : [];
+      const outcome = toMemberOutcome(member.team, finalResult);
+      const ratingDelta = ratingDeltas[member.user_id] ?? 0;
+      const currentRating = normalizeRating(data?.rating);
+      const nextResults = [
+        {
+          match_id: matchId,
+          result: outcome,
+          matched_at: decidedAt,
+          rating_delta: ratingDelta,
+        },
+        ...recentResults,
+      ].slice(0, 20);
+
+      transaction.set(
+        userRefs[index],
+        {
+          total_matches: totalMatches + 1,
+          total_wins: totalWins + (outcome === "win" ? 1 : 0),
+          rating: currentRating + ratingDelta,
+          recent_results: nextResults,
+          updated_at: FieldValue.serverTimestamp(),
+        },
+        { merge: true },
+      );
+    });
+  });
 };
 
 const finalizeMatch = async ({
@@ -304,13 +411,14 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   const candidates: QueueUser[] = snapshot.docs.map((doc) => ({
     id: doc.id,
     queueJoinedAt: doc.get("queue_joined_at") ?? null,
+    rating: normalizeRating(doc.get("rating")),
   }));
 
   if (!shouldRunMatching(candidates, minQueue, maxWaitSec)) {
     return;
   }
 
-  let remaining = shuffle(candidates);
+  let remaining = [...candidates].sort((a, b) => b.rating - a.rating);
   let created = 0;
 
   while (remaining.length >= 10) {
@@ -350,6 +458,7 @@ export const runMatchmakingManual = onRequest(async (req, res) => {
   const candidates: QueueUser[] = snapshot.docs.map((doc) => ({
     id: doc.id,
     queueJoinedAt: doc.get("queue_joined_at") ?? null,
+    rating: normalizeRating(doc.get("rating")),
   }));
 
   if (!shouldRunMatching(candidates, minQueue, maxWaitSec)) {
@@ -357,7 +466,7 @@ export const runMatchmakingManual = onRequest(async (req, res) => {
     return;
   }
 
-  let remaining = shuffle(candidates);
+  let remaining = [...candidates].sort((a, b) => b.rating - a.rating);
   let created = 0;
 
   while (remaining.length >= 10) {

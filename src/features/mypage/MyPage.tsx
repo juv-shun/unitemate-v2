@@ -6,6 +6,7 @@ type RecentResult = {
   match_id: string;
   result: "win" | "loss" | "invalid";
   matched_at: Date | null;
+  rating_delta: number;
 };
 
 export function MyPage() {
@@ -16,6 +17,7 @@ export function MyPage() {
   const [loading, setLoading] = useState(true);
   const [totalMatches, setTotalMatches] = useState(0);
   const [totalWins, setTotalWins] = useState(0);
+  const [rating, setRating] = useState(1600);
   const [recentResults, setRecentResults] = useState<RecentResult[]>([]);
 
   useEffect(() => {
@@ -31,6 +33,9 @@ export function MyPage() {
         setTotalWins(
           typeof data?.total_wins === "number" ? data.total_wins : 0,
         );
+        setRating(
+          typeof data?.rating === "number" ? Math.round(data.rating) : 1600,
+        );
         const normalizedResults = Array.isArray(data?.recent_results)
           ? data.recent_results
               .filter((item) => item?.match_id && item?.result)
@@ -38,6 +43,10 @@ export function MyPage() {
                 match_id: item.match_id as string,
                 result: item.result as "win" | "loss" | "invalid",
                 matched_at: item.matched_at?.toDate?.() ?? null,
+                rating_delta:
+                  typeof item.rating_delta === "number"
+                    ? Math.round(item.rating_delta)
+                    : 0,
               }))
           : [];
         setRecentResults(normalizedResults);
@@ -237,6 +246,38 @@ export function MyPage() {
               color: "var(--color-text-secondary)",
             }}
           >
+            RATING
+          </h2>
+          <div
+            className="rounded-lg px-4 py-4 text-center"
+            style={{
+              backgroundColor: "rgba(15, 23, 42, 0.45)",
+              border: "1px solid rgba(148, 163, 184, 0.2)",
+            }}
+          >
+            <div
+              className="text-3xl font-bold tracking-wide"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              {rating}
+            </div>
+          </div>
+        </section>
+
+        <section
+          className="p-6 border-t"
+          style={{ borderColor: "rgba(148, 163, 184, 0.12)" }}
+        >
+          <h2
+            className="text-xs font-semibold tracking-wider mb-4"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-text-secondary)",
+            }}
+          >
             RESULTS
           </h2>
           <div className="grid grid-cols-3 gap-3 text-center">
@@ -331,7 +372,7 @@ export function MyPage() {
                 {recentResults.map((item) => (
                   <li
                     key={item.match_id}
-                    className="flex items-center justify-between rounded-lg px-3 py-2 text-sm"
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm"
                     style={{
                       backgroundColor: "rgba(15, 23, 42, 0.4)",
                       border: "1px solid rgba(148, 163, 184, 0.15)",
@@ -354,17 +395,34 @@ export function MyPage() {
                           ? "LOSE"
                           : "INVALID"}
                     </span>
-                    <span className="text-xs text-slate-400">
-                      {item.matched_at
-                        ? item.matched_at.toLocaleString("ja-JP", {
-                            year: "numeric",
-                            month: "2-digit",
-                            day: "2-digit",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                        : "-"}
-                    </span>
+                    <div className="ml-auto flex items-center gap-3">
+                      <span className="text-xs text-slate-400">
+                        {item.matched_at
+                          ? item.matched_at.toLocaleString("ja-JP", {
+                              year: "numeric",
+                              month: "2-digit",
+                              day: "2-digit",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "-"}
+                      </span>
+                      <span
+                        className="text-sm font-semibold tabular-nums"
+                        style={{
+                          color:
+                            item.rating_delta > 0
+                              ? "#22c55e"
+                              : item.rating_delta < 0
+                                ? "#ef4444"
+                                : "#f59e0b",
+                        }}
+                      >
+                        {item.rating_delta > 0
+                          ? `+${item.rating_delta}`
+                          : `${item.rating_delta}`}
+                      </span>
+                    </div>
                   </li>
                 ))}
               </ul>

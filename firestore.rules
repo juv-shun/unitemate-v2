@@ -13,7 +13,8 @@ service cloud.firestore {
             "queue_status",
             "queue_joined_at",
             "matched_match_id",
-            "banned_until"
+            "banned_until",
+            "rating"
           ])
           ||
           // キュー開始/キャンセルはクライアントから許可（matchedは不可）

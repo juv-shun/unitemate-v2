@@ -21,6 +21,7 @@ export async function ensureUserExists(
 			display_name: user.displayName || "Unknown User",
 			photo_url: user.photoURL,
 			is_onboarded: false,
+			rating: 1600,
 			total_matches: 0,
 			total_wins: 0,
 			recent_results: [],
@@ -58,12 +59,14 @@ export async function getUserProfile(
 		display_name?: string;
 		is_onboarded?: boolean;
 		photo_url?: string;
+		rating?: number;
 		total_matches?: number;
 		total_wins?: number;
 		recent_results?: Array<{
 			match_id?: string;
 			result?: "win" | "loss" | "invalid";
 			matched_at?: { toDate?: () => Date };
+			rating_delta?: number;
 		}>;
 	} | null
 > {
@@ -74,6 +77,15 @@ export async function getUserProfile(
 			display_name?: string;
 			is_onboarded?: boolean;
 			photo_url?: string;
+			rating?: number;
+			total_matches?: number;
+			total_wins?: number;
+			recent_results?: Array<{
+				match_id?: string;
+				result?: "win" | "loss" | "invalid";
+				matched_at?: { toDate?: () => Date };
+				rating_delta?: number;
+			}>;
 		};
 	}
 	return null;

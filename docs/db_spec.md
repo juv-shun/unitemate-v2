@@ -46,6 +46,7 @@
 | display_name | string | 表示名 |
 | photo_url | string | プロフィール画像URL |
 | is_onboarded | boolean | 初期ユーザー名のセットアップ完了フラグ |
+| rating | number | レート（初期値: 1600） |
 | total_matches | number | 試合数（結果確定済みのみ） |
 | total_wins | number | 勝利数（結果確定済みのみ） |
 | recent_results | array | 直近20試合の結果（結果確定済みのみ） |
@@ -56,6 +57,7 @@ recent_results 要素:
 - match_id: string
 - result: win / loss / invalid
 - matched_at: timestamp（マッチング時刻）
+- rating_delta: number（レート変動値）
 
 ---
 
@@ -78,7 +80,7 @@ recent_results 要素:
 
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
-| phase | string | phase1 / phase2 |
+| phase | string | phase1 / phase2 / phase3 |
 | source_type | string | manual / auto |
 | status | string | waiting / lobby_pending / completed |
 | capacity | number | 10固定 |
@@ -249,8 +251,8 @@ BAN/PICKのリクエスト（承認で確定）。
 
 ---
 
-### 3.13 users/{userId}/rating_changes（フェーズ2）
-Elo反映履歴（ユーザー配下サブコレクション）。
+### 3.13 users/{userId}/rating_changes（将来拡張）
+Elo反映履歴（ユーザー配下サブコレクション）。現状は未使用で、`users.rating` と `users.recent_results.rating_delta` に集約する。
 
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
