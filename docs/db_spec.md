@@ -25,7 +25,7 @@
 - queue_entries（キュー）
 - matches（試合/ルーム）
   - members（サブコレクション）
-  - lobby_infos（サブコレクション）
+  - reports（サブコレクション）
   - result_votes（サブコレクション）
   - match_results（サブコレクション）
 - draft_sessions（ドラフト）
@@ -73,6 +73,9 @@
 | status | string | waiting / draft_pending / drafting / lobby_pending / in_game / completed / invalid |
 | capacity | number | 10固定 |
 | auto_start | boolean | true固定 |
+| first_team | string | first / second |
+| lobby_id | string | ロビーID（8桁数字、先頭0許可、後勝ち上書き） |
+| lobby_updated_at | timestamp | ロビーID更新時刻 |
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
 
@@ -90,6 +93,9 @@
 | team | string | first / second（participantのみ） |
 | seat_no | number | チーム内席番号(1-5)（participantのみ） |
 | joined_at | timestamp | 参加時刻 |
+| seated_at | timestamp \| null | 着席時刻（未着席はnull） |
+| lobby_issue | boolean | 困り中フラグ |
+| lobby_issue_at | timestamp \| null | 困り中設定時刻 |
 
 アプリ側制約: match内で user_id 重複不可、participant は最大10人
 
@@ -176,17 +182,17 @@ BAN/PICKのリクエスト（承認で確定）。
 
 ---
 
-### 3.10 matches/{matchId}/lobby_infos
-ロビーID管理（サブコレクション、1件想定）。
+### 3.10 matches/{matchId}/reports
+未着席通報の記録（サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
 | --- | --- | --- |
-| host_user_id | string | ホスト |
-| lobby_id | string | 入力されたロビーID |
-| status | string | waiting / entered / reselecting / invalid |
-| input_deadline_at | timestamp | 入力期限（2分） |
-| created_at | timestamp | 作成日時 |
-| updated_at | timestamp | 更新日時 |
+| match_id | string | 試合ID |
+| reporter_user_id | string | 通報者ユーザーID |
+| reported_user_id | string | 被通報ユーザーID |
+| reason | string | not_seated |
+| match_created_at | timestamp | マッチ成立時刻 |
+| reported_at | timestamp | 通報時刻 |
 
 ---
 
