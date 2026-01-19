@@ -272,7 +272,7 @@ Elo反映履歴（ユーザー配下サブコレクション）。現状は未�
 | --- | --- | --- |
 | match_id | string | 対象試合 |
 | reason | string | no_show_report / other |
-| banned_until | timestamp | インキュー禁止期限（penalty確定時刻 + 3時間） |
+| banned_until | timestamp | インキュー禁止期限（penalty確定時刻 + 60分） |
 | created_at | timestamp | ペナルティ確定時刻 |
 
 インデックス: banned_until

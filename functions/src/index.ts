@@ -728,7 +728,7 @@ const applyPenalty = async (
     return;
   }
 
-  const penaltyDurationHours = 3;
+  const penaltyDurationHours = 1;
   const penaltyEndTime = Timestamp.fromMillis(
     Date.now() + penaltyDurationHours * 60 * 60 * 1000,
   );
