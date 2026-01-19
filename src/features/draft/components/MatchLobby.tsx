@@ -216,16 +216,6 @@ export function MatchLobby() {
             >
               Lobby ID
             </h3>
-            <div
-              className="rounded-lg px-3 py-2 text-xs font-semibold tracking-wide uppercase relative z-10"
-              style={{
-                backgroundColor: "rgba(6, 182, 212, 0.12)",
-                color: "var(--color-accent-cyan)",
-                border: "1px solid rgba(6, 182, 212, 0.3)",
-              }}
-            >
-              ロビーIDは誰でも入力でき、上書きされます。
-            </div>
             {currentMatch.lobby_id ? (
               <div className="space-y-3 relative z-10">
                 <div className="flex items-center gap-3 flex-wrap">
@@ -255,7 +245,7 @@ export function MatchLobby() {
                 className="text-sm font-medium uppercase tracking-wide relative z-10"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                ゲーム内でロビーを作成し、8桁のロビーIDを入力してください
+                ゲーム内でロビーを作成し、8桁のロビーIDを入力してください。ロビーIDは誰でも入力でき、上書きされます。
               </div>
             )}
             <div className="flex gap-3 relative z-10">
