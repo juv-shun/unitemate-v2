@@ -14,87 +14,75 @@ import { RankingPage } from "./features/ranking/RankingPage";
 import { StatsPage } from "./features/stats/StatsPage";
 
 function App() {
-	return (
-		<BrowserRouter>
-			<AuthProvider>
-				<QueueProvider>
-					<MatchProvider>
-						<Routes>
-							<Route path="/login" element={<LoginPage />} />
-							<Route
-								path="/onboarding"
-								element={
-									<ProtectedRoute>
-										<OnboardingPage />
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<HomePage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/lobby/:matchId?"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<DraftSimulationPage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/match/:matchId?"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<MatchResultPage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/mypage"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<MyPage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/ranking"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<RankingPage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-							<Route
-								path="/stats"
-								element={
-									<ProtectedRoute>
-										<Layout>
-											<StatsPage />
-										</Layout>
-									</ProtectedRoute>
-								}
-							/>
-						</Routes>
-					</MatchProvider>
-				</QueueProvider>
-			</AuthProvider>
-		</BrowserRouter>
-	);
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <QueueProvider>
+          <MatchProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route
+                path="/onboarding"
+                element={
+                  <ProtectedRoute>
+                    <OnboardingPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <Layout>
+                    <HomePage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/lobby/:matchId?"
+                element={
+                  <Layout>
+                    <DraftSimulationPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/match/:matchId?"
+                element={
+                  <Layout>
+                    <MatchResultPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/mypage"
+                element={
+                  <Layout>
+                    <MyPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/ranking"
+                element={
+                  <Layout>
+                    <RankingPage />
+                  </Layout>
+                }
+              />
+              <Route
+                path="/stats"
+                element={
+                  <Layout>
+                    <StatsPage />
+                  </Layout>
+                }
+              />
+            </Routes>
+          </MatchProvider>
+        </QueueProvider>
+      </AuthProvider>
+    </BrowserRouter>
+  );
 }
 
 export default App;

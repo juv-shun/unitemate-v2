@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../QueueContext";
 import { SearchingIndicator } from "./SearchingIndicator";
 
@@ -10,6 +11,7 @@ function formatElapsedTime(seconds: number): string {
 }
 
 export function QueueSection() {
+  const { user } = useAuth();
   const {
     queueStatus,
     queueJoinedAt,
@@ -30,9 +32,7 @@ export function QueueSection() {
 
     const calculateElapsed = () => {
       const now = new Date();
-      const diff = Math.floor(
-        (now.getTime() - queueJoinedAt.getTime()) / 1000,
-      );
+      const diff = Math.floor((now.getTime() - queueJoinedAt.getTime()) / 1000);
       setElapsedSeconds(Math.max(0, diff));
     };
 
@@ -229,7 +229,7 @@ export function QueueSection() {
     <button
       type="button"
       onClick={handleStartQueue}
-      disabled={isProcessing}
+      disabled={isProcessing || !user}
       className="group relative w-full py-4 rounded-lg font-bold text-lg tracking-wider transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
       style={{
         fontFamily: "var(--font-display)",
@@ -266,7 +266,7 @@ export function QueueSection() {
             clipRule="evenodd"
           />
         </svg>
-        {isProcessing ? "STARTING..." : "FIND MATCH"}
+        {isProcessing ? "STARTING..." : user ? "FIND MATCH" : "LOGIN REQUIRED"}
       </span>
     </button>
   );
