@@ -348,7 +348,7 @@ export function MatchLobby() {
           {/* チームパネル（2列） */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <TeamDisplay
-              title="FIRST STRIKE (先攻)"
+              title="FIRST (先攻)"
               members={firstTeamMembers}
               currentUserId={user?.uid}
               onReport={handleReport}
@@ -356,7 +356,7 @@ export function MatchLobby() {
               index={0}
             />
             <TeamDisplay
-              title="SECOND WAVE (後攻)"
+              title="SECOND (後攻)"
               members={secondTeamMembers}
               currentUserId={user?.uid}
               onReport={handleReport}
