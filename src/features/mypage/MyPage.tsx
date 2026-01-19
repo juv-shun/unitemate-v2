@@ -28,7 +28,9 @@ export function MyPage() {
         setTotalMatches(
           typeof data?.total_matches === "number" ? data.total_matches : 0,
         );
-        setTotalWins(typeof data?.total_wins === "number" ? data.total_wins : 0);
+        setTotalWins(
+          typeof data?.total_wins === "number" ? data.total_wins : 0,
+        );
         const normalizedResults = Array.isArray(data?.recent_results)
           ? data.recent_results
               .filter((item) => item?.match_id && item?.result)
@@ -249,7 +251,7 @@ export function MyPage() {
                 className="text-xs font-semibold"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                試合数
+                MATCHES
               </div>
               <div
                 className="text-lg font-bold"
@@ -272,7 +274,7 @@ export function MyPage() {
                 className="text-xs font-semibold"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                勝利数
+                WINS
               </div>
               <div
                 className="text-lg font-bold"
@@ -295,7 +297,7 @@ export function MyPage() {
                 className="text-xs font-semibold"
                 style={{ color: "var(--color-text-secondary)" }}
               >
-                勝率
+                WIN RATE
               </div>
               <div
                 className="text-lg font-bold"
@@ -318,7 +320,7 @@ export function MyPage() {
                 color: "var(--color-text-secondary)",
               }}
             >
-              直近20試合
+              Recent 20 Matches
             </div>
             {recentResults.length === 0 ? (
               <div className="text-sm text-slate-400">
