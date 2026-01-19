@@ -97,4 +97,5 @@ export interface Report {
 	reason: "not_seated";
 	match_created_at: Date;
 	reported_at: Date;
+	screenshot_url?: string;
 }

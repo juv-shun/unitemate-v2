@@ -126,7 +126,11 @@ service cloud.firestore {
         && request.resource.data.reason == "not_seated"
         && request.resource.data.match_id is string
         && request.resource.data.match_created_at is timestamp
-        && request.resource.data.reported_at is timestamp;
+        && request.resource.data.reported_at is timestamp
+        && (
+          !("screenshot_url" in request.resource.data)
+          || request.resource.data.screenshot_url is string
+        );
 
       // 更新・削除は禁止
       allow update, delete: if false;

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../../queue/QueueContext";
+import { storage } from "../../../firebase";
 import { useMatch } from "../MatchContext";
 import type { Member } from "../types";
 
@@ -29,6 +31,10 @@ export function MatchLobby() {
   const [seatingInProgress, setSeatingInProgress] = useState(false);
   const [showLobbyScreen, setShowLobbyScreen] = useState(false);
   const [entryError, setEntryError] = useState("");
+  const [reportTarget, setReportTarget] = useState<Member | null>(null);
+  const [reportFile, setReportFile] = useState<File | null>(null);
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportError, setReportError] = useState("");
 
   useEffect(() => {
     setShowLobbyScreen(false);
@@ -95,14 +101,34 @@ export function MatchLobby() {
   };
 
   // 通報
-  const handleReport = async (reportedUserId: string) => {
-    if (!window.confirm("このユーザーを通報しますか？")) return;
+  const handleReport = (member: Member) => {
+    setReportTarget(member);
+    setReportFile(null);
+    setReportError("");
+  };
+
+  const handleSubmitReport = async () => {
+    if (!reportTarget || !currentMatch || !user) return;
+    setReportSubmitting(true);
+    setReportError("");
     try {
-      await createReport(reportedUserId);
+      let screenshotUrl: string | undefined;
+      if (reportFile) {
+        const safeName = reportFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const filePath = `reports/${currentMatch.id}/${user.uid}/${Date.now()}_${safeName}`;
+        const storageRef = ref(storage, filePath);
+        await uploadBytes(storageRef, reportFile);
+        screenshotUrl = await getDownloadURL(storageRef);
+      }
+      await createReport(reportTarget.user_id, screenshotUrl);
+      setReportTarget(null);
+      setReportFile(null);
       alert("通報を送信しました");
     } catch (err) {
       console.error("Failed to create report:", err);
-      alert("通報の送信に失敗しました");
+      setReportError("通報の送信に失敗しました。時間をおいて再試行してください。");
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -183,6 +209,117 @@ export function MatchLobby() {
             >
               {seatingInProgress ? "処理中..." : "ロビーへ進む"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {reportTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0"
+            style={{ backgroundColor: "rgba(2, 6, 23, 0.78)" }}
+          />
+          <div
+            className="relative w-full max-w-lg rounded-2xl p-6 text-left"
+            style={{
+              backgroundColor: "var(--color-surface)",
+              boxShadow:
+                "0 24px 60px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+              border: "1px solid rgba(148, 163, 184, 0.15)",
+            }}
+          >
+            <h2
+              className="text-xl font-bold tracking-wide"
+              style={{
+                fontFamily: "var(--font-display)",
+                color: "var(--color-text-primary)",
+              }}
+            >
+              通報（ゲームに来なかった）
+            </h2>
+            <p className="mt-2 text-sm text-slate-300">
+              対象: {reportTarget.display_name || "名無し"}
+            </p>
+            <div
+              className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold"
+              style={{
+                backgroundColor: "rgba(239, 68, 68, 0.12)",
+                color: "#f87171",
+                border: "1px solid rgba(239, 68, 68, 0.35)",
+              }}
+            >
+              この通報は「ゲームに来なかった」場合のみ受け付けます。
+              トロールなどゲーム内行動への対応は一切行いません。
+            </div>
+            <div className="mt-4 space-y-2">
+              <label className="block text-sm font-semibold text-slate-200">
+                スクリーンショット（任意）
+              </label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] ?? null;
+                  setReportFile(file);
+                  setReportError("");
+                }}
+                className="block w-full text-sm text-slate-300 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-slate-100 hover:file:bg-slate-600"
+              />
+              {reportFile && (
+                <div className="text-xs text-slate-400">{reportFile.name}</div>
+              )}
+            </div>
+            {reportError && (
+              <div className="mt-3 text-sm font-bold text-red-400">
+                {reportError}
+              </div>
+            )}
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setReportTarget(null)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+                style={{
+                  backgroundColor: "rgba(100, 116, 139, 0.25)",
+                  color: "var(--color-text-primary)",
+                  border: "1px solid rgba(100, 116, 139, 0.4)",
+                  fontFamily: "var(--font-display)",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(100, 116, 139, 0.45)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(100, 116, 139, 0.25)";
+                }}
+              >
+                キャンセル
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitReport}
+                disabled={reportSubmitting}
+                className="px-4 py-2 rounded-lg text-sm font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: "rgba(239, 68, 68, 0.2)",
+                  color: "#f87171",
+                  border: "1px solid rgba(239, 68, 68, 0.4)",
+                  fontFamily: "var(--font-display)",
+                }}
+                onMouseEnter={(e) => {
+                  if (reportSubmitting) return;
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239, 68, 68, 0.35)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor =
+                    "rgba(239, 68, 68, 0.2)";
+                }}
+              >
+                {reportSubmitting ? "送信中..." : "通報する"}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -404,19 +541,19 @@ export function MatchLobby() {
 
 // チーム表示コンポーネント
 function TeamDisplay({
-  title,
-  members,
-  currentUserId,
-  onReport,
+	title,
+	members,
+	currentUserId,
+	onReport,
   accentColor,
   index,
 }: {
   title: string;
   members: Member[];
   currentUserId?: string;
-  onReport: (userId: string) => void;
-  accentColor: string;
-  index: number;
+	onReport: (member: Member) => void;
+	accentColor: string;
+	index: number;
 }) {
   return (
     <div
@@ -517,7 +654,7 @@ function TeamDisplay({
               {!isCurrentUser && (
                 <button
                   type="button"
-                  onClick={() => onReport(member.user_id)}
+                  onClick={() => onReport(member)}
                   className="px-3 py-1 rounded text-xs font-bold uppercase tracking-wider transition-all duration-300 hover:scale-105 active:scale-95"
                   style={{
                     backgroundColor: "rgba(239, 68, 68, 0.15)",

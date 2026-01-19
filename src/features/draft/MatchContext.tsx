@@ -53,7 +53,7 @@ interface MatchContextType {
 	unsetSeated: () => Promise<void>;
 	setLobbyIssue: () => Promise<void>;
 	unsetLobbyIssue: () => Promise<void>;
-	createReport: (reportedUserId: string) => Promise<void>;
+	createReport: (reportedUserId: string, screenshotUrl?: string) => Promise<void>;
 
 	// 計算プロパティ
 	participantCount: number;
@@ -296,7 +296,7 @@ export function MatchProvider({ children }: MatchProviderProps) {
 	}, [user, currentMatchId]);
 
 	const createReport = useCallback(
-		async (reportedUserId: string): Promise<void> => {
+		async (reportedUserId: string, screenshotUrl?: string): Promise<void> => {
 			if (!user || !currentMatchId || !currentMatch)
 				throw new Error("Invalid state");
 			try {
@@ -305,6 +305,7 @@ export function MatchProvider({ children }: MatchProviderProps) {
 					user.uid,
 					reportedUserId,
 					currentMatch.created_at,
+					screenshotUrl,
 				);
 			} catch (err) {
 				const errorMessage =

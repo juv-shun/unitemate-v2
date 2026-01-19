@@ -193,6 +193,7 @@ BAN/PICKのリクエスト（承認で確定）。
 | reason | string | not_seated |
 | match_created_at | timestamp | マッチ成立時刻 |
 | reported_at | timestamp | 通報時刻 |
+| screenshot_url | string | スクリーンショットURL（任意） |
 
 ---
 

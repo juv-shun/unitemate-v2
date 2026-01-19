@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
+import { connectStorageEmulator, getStorage } from "firebase/storage";
 
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -17,6 +18,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const functions = getFunctions(app, "asia-northeast1");
+export const storage = getStorage(app);
 
 // エミュレータ接続（開発環境のみ）
 const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
@@ -27,6 +29,7 @@ if (useEmulator) {
 	});
 	connectFirestoreEmulator(db, "localhost", 8080);
 	connectFunctionsEmulator(functions, "localhost", 5001);
+	connectStorageEmulator(storage, "localhost", 9199);
 	console.log("✅ Firebase Emulators に接続しました");
 }
 

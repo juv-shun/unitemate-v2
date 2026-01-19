@@ -805,14 +805,19 @@ export async function createReport(
 	reporterUserId: string,
 	reportedUserId: string,
 	matchCreatedAt: Date,
+	screenshotUrl?: string,
 ): Promise<string> {
-	const docRef = await addDoc(collection(db, "reports"), {
+	const payload: Record<string, unknown> = {
 		match_id: matchId,
 		reporter_user_id: reporterUserId,
 		reported_user_id: reportedUserId,
 		reason: "not_seated",
 		match_created_at: Timestamp.fromDate(matchCreatedAt),
 		reported_at: serverTimestamp(),
-	});
+	};
+	if (screenshotUrl) {
+		payload.screenshot_url = screenshotUrl;
+	}
+	const docRef = await addDoc(collection(db, "reports"), payload);
 	return docRef.id;
 }
