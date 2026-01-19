@@ -12,6 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
   cancelQueue as cancelQueueFn,
+  isQueueClosedAt,
   type QueueData,
   startQueue as startQueueFn,
   subscribeToQueueStatus,
@@ -101,6 +102,9 @@ export function QueueProvider({ children }: QueueProviderProps) {
 
   const startQueue = useCallback(async () => {
     if (!user) return;
+    if (isQueueClosedAt(new Date())) {
+      throw new Error("現在はマッチング受付時間外です");
+    }
     if (isBanned) {
       throw new Error("ペナルティ中のため、マッチングに参加できません");
     }
