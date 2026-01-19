@@ -266,57 +266,55 @@ export function QueueSection() {
           </p>
         </div>
       )}
-      <button
-        type="button"
-        onClick={handleStartQueue}
-        disabled={isProcessing || !user || isBanned}
-        className="group relative w-full py-4 rounded-lg font-bold text-lg tracking-wider transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-        style={{
-          fontFamily: "var(--font-display)",
-          color: "var(--color-text-primary)",
-          backgroundColor: "var(--color-surface)",
-          border: isBanned
-            ? "1px solid var(--color-danger)"
-            : "1px solid var(--color-accent-cyan)",
-        }}
-      >
-        {/* Hover glow effect */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      {!isBanned && (
+        <button
+          type="button"
+          onClick={handleStartQueue}
+          disabled={isProcessing || !user}
+          className="group relative w-full py-4 rounded-lg font-bold text-lg tracking-wider transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
           style={{
-            background:
-              "radial-gradient(ellipse at center, rgba(6, 182, 212, 0.15) 0%, transparent 70%)",
+            fontFamily: "var(--font-display)",
+            color: "var(--color-text-primary)",
+            backgroundColor: "var(--color-surface)",
+            border: "1px solid var(--color-accent-cyan)",
           }}
-        />
+        >
+          {/* Hover glow effect */}
+          <div
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, rgba(6, 182, 212, 0.15) 0%, transparent 70%)",
+            }}
+          />
 
-        {/* Bottom accent line */}
-        <div
-          className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 group-hover:w-3/4 transition-all duration-300"
-          style={{ backgroundColor: "var(--color-accent-cyan)" }}
-        />
+          {/* Bottom accent line */}
+          <div
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-0 group-hover:w-3/4 transition-all duration-300"
+            style={{ backgroundColor: "var(--color-accent-cyan)" }}
+          />
 
-        <span className="relative z-10 flex items-center justify-center gap-2">
-          <svg
-            className="w-5 h-5"
-            fill="currentColor"
-            viewBox="0 0 20 20"
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
-              clipRule="evenodd"
-            />
-          </svg>
-          {isProcessing
-            ? "STARTING..."
-            : user
-              ? isBanned
-                ? "ペナルティ中"
-                : "FIND MATCH"
-              : "LOGIN REQUIRED"}
-        </span>
-      </button>
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <svg
+              className="w-5 h-5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+              aria-hidden="true"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {isProcessing
+              ? "STARTING..."
+              : user
+                ? "FIND MATCH"
+                : "LOGIN REQUIRED"}
+          </span>
+        </button>
+      )}
     </div>
   );
 }
