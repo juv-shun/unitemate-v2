@@ -1,17 +1,18 @@
 import {
-  type ReactNode,
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import {
-  type QueueData,
   cancelQueue as cancelQueueFn,
+  type QueueData,
   startQueue as startQueueFn,
   subscribeToQueueStatus,
 } from "./queue";
@@ -67,12 +68,23 @@ export function QueueProvider({ children }: QueueProviderProps) {
     return () => unsubscribe();
   }, [user]);
 
+  const prevQueueStatus = useRef(queueStatus);
+
   useEffect(() => {
+    const justMatched =
+      prevQueueStatus.current !== "matched" && queueStatus === "matched";
+    const isHomePage = location.pathname === "/";
+
+    // Update ref for next render
+    prevQueueStatus.current = queueStatus;
+
     if (queueStatus !== "matched" || !matchedMatchId) return;
 
-    const targetPath = `/lobby/${matchedMatchId}`;
-    if (location.pathname !== targetPath) {
-      navigate(targetPath, { replace: true });
+    if (justMatched || isHomePage) {
+      const targetPath = `/lobby/${matchedMatchId}`;
+      if (location.pathname !== targetPath) {
+        navigate(targetPath, { replace: true });
+      }
     }
   }, [queueStatus, matchedMatchId, location.pathname, navigate]);
 
