@@ -6,7 +6,6 @@ export type MatchStatus =
 	| "draft_pending" // 10人揃い、ドラフト待機
 	| "drafting" // ドラフト中
 	| "lobby_pending" // ロビー入力待ち
-	| "in_game" // ゲーム中
 	| "completed" // 完了
 	| "invalid"; // 無効
 

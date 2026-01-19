@@ -740,10 +740,10 @@ export function subscribeToDraftSession(
 export async function setLobbyId(
 	matchId: string,
 	lobbyId: string,
-): Promise<{ success: boolean; status: string; transitionedToInGame: boolean }> {
+): Promise<{ success: boolean; status: string }> {
 	const fn = httpsCallable<
 		{ matchId: string; lobbyId: string },
-		{ success: boolean; status: string; transitionedToInGame: boolean }
+		{ success: boolean; status: string }
 	>(functions, "setMatchLobbyId");
 	const result = await fn({ matchId, lobbyId });
 	return result.data;
@@ -754,10 +754,10 @@ export async function setLobbyId(
  */
 export async function setSeated(
 	matchId: string,
-): Promise<{ success: boolean; transitionedToInGame: boolean }> {
+): Promise<{ success: boolean }> {
 	const fn = httpsCallable<
 		{ matchId: string },
-		{ success: boolean; transitionedToInGame: boolean }
+		{ success: boolean }
 	>(functions, "setSeated");
 	const result = await fn({ matchId });
 	return result.data;

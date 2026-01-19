@@ -48,8 +48,8 @@ interface MatchContextType {
 	setCurrentMatchId: (matchId: string | null) => void;
 	
 	// ロビー共有アクション（フェーズ1）
-	setLobbyId: (lobbyId: string) => Promise<{ transitionedToInGame: boolean }>;
-	setSeated: () => Promise<{ transitionedToInGame: boolean }>;
+	setLobbyId: (lobbyId: string) => Promise<void>;
+	setSeated: () => Promise<void>;
 	unsetSeated: () => Promise<void>;
 	setLobbyIssue: () => Promise<void>;
 	unsetLobbyIssue: () => Promise<void>;
@@ -64,7 +64,6 @@ interface MatchContextType {
 	secondTeamMembers: Member[];
 	isDraftReady: boolean; // 10人揃い
 	isAllSeated: boolean; // 全員着席
-	isLobbyReady: boolean; // ロビーID設定済み & 全員着席
 }
 
 const MatchContext = createContext<MatchContextType | null>(null);
@@ -231,11 +230,10 @@ export function MatchProvider({ children }: MatchProviderProps) {
 
 	// ロビー共有アクション（フェーズ1）
 	const setLobbyId = useCallback(
-		async (lobbyId: string): Promise<{ transitionedToInGame: boolean }> => {
+		async (lobbyId: string): Promise<void> => {
 			if (!currentMatchId) throw new Error("No match selected");
 			try {
-				const result = await setLobbyIdFn(currentMatchId, lobbyId);
-				return { transitionedToInGame: result.transitionedToInGame };
+				await setLobbyIdFn(currentMatchId, lobbyId);
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Failed to set lobby ID";
@@ -247,11 +245,10 @@ export function MatchProvider({ children }: MatchProviderProps) {
 	);
 
 	const setSeated = useCallback(
-		async (): Promise<{ transitionedToInGame: boolean }> => {
+		async (): Promise<void> => {
 			if (!currentMatchId) throw new Error("No match selected");
 			try {
-				const result = await setSeatedFn(currentMatchId);
-				return { transitionedToInGame: result.transitionedToInGame };
+				await setSeatedFn(currentMatchId);
 			} catch (err) {
 				const errorMessage =
 					err instanceof Error ? err.message : "Failed to set seated";
@@ -366,10 +363,6 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		);
 	}, [members]);
 
-	const isLobbyReady = useMemo(() => {
-		return currentMatch?.lobby_id != null && isAllSeated;
-	}, [currentMatch, isAllSeated]);
-
 	return (
 		<MatchContext.Provider
 			value={{
@@ -398,7 +391,6 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				secondTeamMembers,
 				isDraftReady,
 				isAllSeated,
-				isLobbyReady,
 			}}
 		>
 			{children}

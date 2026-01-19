@@ -70,7 +70,7 @@
 | --- | --- | --- |
 | phase | string | phase1 / phase2 |
 | source_type | string | manual / auto |
-| status | string | waiting / draft_pending / drafting / lobby_pending / in_game / completed / invalid |
+| status | string | waiting / draft_pending / drafting / lobby_pending / completed / invalid |
 | capacity | number | 10固定 |
 | auto_start | boolean | true固定 |
 | first_team | string | first / second |

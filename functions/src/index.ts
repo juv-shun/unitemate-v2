@@ -258,33 +258,26 @@ export const setMatchLobbyId = onCall(
       }
       const matchData = matchSnap.data()!;
 
-      if (!["lobby_pending", "in_game"].includes(matchData.status)) {
+      if (matchData.status !== "lobby_pending") {
         throw new HttpsError("failed-precondition", "変更不可ステータス");
-      }
-
-      let newStatus = matchData.status;
-      if (matchData.status === "lobby_pending" && allSeated) {
-        newStatus = "in_game";
       }
 
       transaction.update(matchRef, {
         lobby_id: lobbyId,
         lobby_updated_at: FieldValue.serverTimestamp(),
-        status: newStatus,
         updated_at: FieldValue.serverTimestamp(),
       });
 
       return {
         success: true,
-        status: newStatus,
-        transitionedToInGame: newStatus === "in_game",
+        status: matchData.status,
       };
     });
   },
 );
 
 /**
- * 着席設定（着席設定 + 自動遷移）
+ * 着席設定
  */
 export const setSeated = onCall(
   { region: "asia-northeast1" },
@@ -312,37 +305,7 @@ export const setSeated = onCall(
       seated_at: FieldValue.serverTimestamp(),
     });
 
-    // 全員着席チェック + 遷移判定
-    const membersSnap = await matchRef
-      .collection("members")
-      .where("role", "==", "participant")
-      .get();
-    const allSeated = membersSnap.docs.every((doc) => {
-      const data = doc.data();
-      // 自分は今更新したので seated_at がまだ反映されてない可能性
-      if (doc.id === userId) return true;
-      return data.seated_at != null;
-    });
-
-    // lobby_id設定済み かつ 全員着席なら in_game に遷移
-    return db.runTransaction(async (transaction) => {
-      const matchSnap = await transaction.get(matchRef);
-      const matchData = matchSnap.data()!;
-
-      if (
-        matchData.status === "lobby_pending" &&
-        matchData.lobby_id &&
-        allSeated
-      ) {
-        transaction.update(matchRef, {
-          status: "in_game",
-          updated_at: FieldValue.serverTimestamp(),
-        });
-        return { success: true, transitionedToInGame: true };
-      }
-
-      return { success: true, transitionedToInGame: false };
-    });
+    return { success: true };
   },
 );
 

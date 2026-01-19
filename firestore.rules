@@ -68,10 +68,10 @@ service cloud.firestore {
             // waiting時: 座席移動許可
             get(/databases/$(database)/documents/matches/$(matchId)).data.status == "waiting"
             ||
-            // lobby_pending/in_game時: 困り中フィールドのみ許可
+            // lobby_pending時: 困り中フィールドのみ許可
             // 注: seated_atはCallable経由で更新するため、クライアント直接更新は不要
             (
-              get(/databases/$(database)/documents/matches/$(matchId)).data.status in ["lobby_pending", "in_game"]
+              get(/databases/$(database)/documents/matches/$(matchId)).data.status == "lobby_pending"
               && request.resource.data.diff(resource.data).changedKeys().hasOnly([
                 "lobby_issue", "lobby_issue_at"
               ])
