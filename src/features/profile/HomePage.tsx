@@ -1,4 +1,5 @@
 import { QueueSection } from "../queue/components/QueueSection";
+import { GameRules } from "./components/GameRules";
 
 export function HomePage() {
 	return (
@@ -39,6 +40,9 @@ export function HomePage() {
 				<section className="p-6">
 					<QueueSection />
 				</section>
+
+				{/* ゲームルールセクション */}
+				<GameRules />
 			</main>
 		</div>
 	);
