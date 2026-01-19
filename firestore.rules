@@ -58,12 +58,25 @@ service cloud.firestore {
           && request.resource.data.user_id == request.auth.uid
           && request.resource.data.role in ["participant", "spectator"];
 
-        // 更新: 自分自身の座席移動のみ許可（team, seat_noの変更）
+        // 更新: 自分自身のみ許可
         allow update: if request.auth != null
           && request.auth.uid == memberId
           && resource.data.user_id == request.auth.uid
           && request.resource.data.user_id == request.auth.uid
-          && request.resource.data.role == resource.data.role;
+          && request.resource.data.role == resource.data.role
+          && (
+            // waiting時: 座席移動許可
+            get(/databases/$(database)/documents/matches/$(matchId)).data.status == "waiting"
+            ||
+            // lobby_pending/in_game時: 困り中フィールドのみ許可
+            // 注: seated_atはCallable経由で更新するため、クライアント直接更新は不要
+            (
+              get(/databases/$(database)/documents/matches/$(matchId)).data.status in ["lobby_pending", "in_game"]
+              && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+                "lobby_issue", "lobby_issue_at"
+              ])
+            )
+          );
 
         // 削除: 自分自身のみ退出可能
         allow delete: if request.auth != null
@@ -97,6 +110,26 @@ service cloud.firestore {
         // 更新・削除は禁止
         allow update, delete: if false;
       }
+    }
+
+    // reports コレクション（通報）
+    match /reports/{reportId} {
+      // 読み取り: 通報者または被通報者のみ
+      allow read: if request.auth != null
+        && (resource.data.reporter_user_id == request.auth.uid
+            || resource.data.reported_user_id == request.auth.uid);
+
+      // 作成: 認証済みユーザーのみ、reasonは"not_seated"のみ、自分への通報は禁止
+      allow create: if request.auth != null
+        && request.resource.data.reporter_user_id == request.auth.uid
+        && request.resource.data.reported_user_id != request.auth.uid
+        && request.resource.data.reason == "not_seated"
+        && request.resource.data.match_id is string
+        && request.resource.data.match_created_at is timestamp
+        && request.resource.data.reported_at is timestamp;
+
+      // 更新・削除は禁止
+      allow update, delete: if false;
     }
   }
 }

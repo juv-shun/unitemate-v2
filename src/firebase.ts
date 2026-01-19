@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { connectFunctionsEmulator, getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const functions = getFunctions(app, "asia-northeast1");
 
 // エミュレータ接続（開発環境のみ）
 const useEmulator = import.meta.env.VITE_USE_FIREBASE_EMULATOR === "true";
@@ -24,6 +26,7 @@ if (useEmulator) {
 		disableWarnings: true,
 	});
 	connectFirestoreEmulator(db, "localhost", 8080);
+	connectFunctionsEmulator(functions, "localhost", 5001);
 	console.log("✅ Firebase Emulators に接続しました");
 }
 

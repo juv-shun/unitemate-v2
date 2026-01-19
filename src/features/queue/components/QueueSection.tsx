@@ -150,29 +150,75 @@ export function QueueSection() {
         }}
       >
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <div className="text-lg font-semibold text-emerald-300">
-            マッチ成立！
+          <div
+            className="text-xs font-semibold tracking-wider"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "rgba(34, 197, 94, 0.8)",
+            }}
+          >
+            MATCH FOUND
           </div>
-          <p className="text-sm text-slate-300">
-            チーム分けと先攻/後攻を表示します
+          <div
+            className="text-2xl font-bold"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-text-primary)",
+            }}
+          >
+            マッチ成立
+          </div>
+          <p
+            className="text-sm"
+            style={{
+              color: "var(--color-text-secondary)",
+            }}
+          >
+            次へ進むために確認ボタンを押してください
           </p>
+          {matchedMatchId && (
+            <div
+              className="px-4 py-2 rounded-lg"
+              style={{
+                backgroundColor: "rgba(15, 23, 42, 0.6)",
+                border: "1px solid rgba(6, 182, 212, 0.3)",
+              }}
+            >
+              <div
+                className="text-xs tracking-wider"
+                style={{
+                  color: "var(--color-text-secondary)",
+                }}
+              >
+                マッチID
+              </div>
+              <code
+                className="text-sm font-mono tracking-wide"
+                style={{
+                  color: "var(--color-accent-cyan)",
+                }}
+              >
+                {matchedMatchId}
+              </code>
+            </div>
+          )}
           <button
             type="button"
             onClick={() => {
               if (matchedMatchId) {
-                navigate(`/match/${matchedMatchId}`);
+                navigate(`/draft/${matchedMatchId}`);
               }
             }}
             disabled={!matchedMatchId}
-            className="px-6 py-2.5 rounded font-semibold text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-8 py-3 rounded-lg font-bold text-sm tracking-wider transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             style={{
               fontFamily: "var(--font-display)",
-              color: "var(--color-text-primary)",
-              backgroundColor: "rgba(34, 197, 94, 0.15)",
-              border: "1px solid rgba(34, 197, 94, 0.4)",
+              color: "var(--color-base)",
+              backgroundColor: "rgba(34, 197, 94, 0.9)",
+              boxShadow: "0 4px 20px rgba(34, 197, 94, 0.3)",
             }}
           >
-            結果画面へ
+            確認
           </button>
         </div>
       </div>

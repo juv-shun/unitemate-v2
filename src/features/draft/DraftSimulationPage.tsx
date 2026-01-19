@@ -39,7 +39,7 @@ export function DraftSimulationPage() {
 						color: "var(--color-text-primary)",
 					}}
 				>
-					ドラフトマッチ
+					Lobby
 				</h1>
 
 				{matchId ? (

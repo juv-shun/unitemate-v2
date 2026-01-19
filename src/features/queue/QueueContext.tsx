@@ -63,7 +63,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
   useEffect(() => {
     if (queueStatus !== "matched" || !matchedMatchId) return;
 
-    const targetPath = `/match/${matchedMatchId}`;
+    const targetPath = `/draft/${matchedMatchId}`;
     if (location.pathname !== targetPath) {
       navigate(targetPath, { replace: true });
     }

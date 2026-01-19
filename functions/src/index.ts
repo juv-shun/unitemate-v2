@@ -1,8 +1,12 @@
 import { initializeApp } from "firebase-admin/app";
-import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
-import { onRequest } from "firebase-functions/v2/https";
-import { onSchedule } from "firebase-functions/v2/scheduler";
+import {
+  FieldValue,
+  getFirestore,
+  type Timestamp,
+} from "firebase-admin/firestore";
+import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { setGlobalOptions } from "firebase-functions/v2/options";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 
 initializeApp();
 const db = getFirestore();
@@ -91,9 +95,7 @@ const commitMatch = async (
     });
 
     for (const assignment of assignments) {
-      const memberRef = matchRef
-        .collection("members")
-        .doc(assignment.userId);
+      const memberRef = matchRef.collection("members").doc(assignment.userId);
       transaction.set(memberRef, {
         user_id: assignment.userId,
         role: "participant",
@@ -206,3 +208,171 @@ export const runMatchmakingManual = onRequest(async (req, res) => {
 
   res.status(200).json({ created });
 });
+
+// --- Callable Functions ---
+
+/**
+ * ロビーID設定（参加者チェック付き）
+ */
+export const setMatchLobbyId = onCall(
+  { region: "asia-northeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "認証が必要です");
+    }
+    const { matchId, lobbyId } = request.data;
+    const userId = request.auth.uid;
+
+    // バリデーション: lobbyId (8桁数字)
+    if (!/^\d{8}$/.test(lobbyId)) {
+      throw new HttpsError("invalid-argument", "ロビーIDは8桁の数字");
+    }
+
+    const matchRef = db.collection("matches").doc(matchId);
+
+    // トランザクション外: 参加者チェック + メンバー一覧取得
+    const callerMemberSnap = await matchRef
+      .collection("members")
+      .doc(userId)
+      .get();
+    if (!callerMemberSnap.exists) {
+      throw new HttpsError(
+        "permission-denied",
+        "このマッチの参加者ではありません",
+      );
+    }
+
+    const membersSnap = await matchRef
+      .collection("members")
+      .where("role", "==", "participant")
+      .get();
+    const allSeated = membersSnap.docs.every(
+      (doc) => doc.data().seated_at != null,
+    );
+
+    // トランザクション: match更新のみ
+    return db.runTransaction(async (transaction) => {
+      const matchSnap = await transaction.get(matchRef);
+      if (!matchSnap.exists) {
+        throw new HttpsError("not-found", "マッチが見つかりません");
+      }
+      const matchData = matchSnap.data()!;
+
+      if (!["lobby_pending", "in_game"].includes(matchData.status)) {
+        throw new HttpsError("failed-precondition", "変更不可ステータス");
+      }
+
+      let newStatus = matchData.status;
+      if (matchData.status === "lobby_pending" && allSeated) {
+        newStatus = "in_game";
+      }
+
+      transaction.update(matchRef, {
+        lobby_id: lobbyId,
+        lobby_updated_at: FieldValue.serverTimestamp(),
+        status: newStatus,
+        updated_at: FieldValue.serverTimestamp(),
+      });
+
+      return {
+        success: true,
+        status: newStatus,
+        transitionedToInGame: newStatus === "in_game",
+      };
+    });
+  },
+);
+
+/**
+ * 着席設定（着席設定 + 自動遷移）
+ */
+export const setSeated = onCall(
+  { region: "asia-northeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "認証が必要です");
+    }
+    const { matchId } = request.data;
+    const userId = request.auth.uid;
+
+    const matchRef = db.collection("matches").doc(matchId);
+    const memberRef = matchRef.collection("members").doc(userId);
+
+    // 参加者チェック
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      throw new HttpsError(
+        "permission-denied",
+        "このマッチの参加者ではありません",
+      );
+    }
+
+    // 着席更新
+    await memberRef.update({
+      seated_at: FieldValue.serverTimestamp(),
+    });
+
+    // 全員着席チェック + 遷移判定
+    const membersSnap = await matchRef
+      .collection("members")
+      .where("role", "==", "participant")
+      .get();
+    const allSeated = membersSnap.docs.every((doc) => {
+      const data = doc.data();
+      // 自分は今更新したので seated_at がまだ反映されてない可能性
+      if (doc.id === userId) return true;
+      return data.seated_at != null;
+    });
+
+    // lobby_id設定済み かつ 全員着席なら in_game に遷移
+    return db.runTransaction(async (transaction) => {
+      const matchSnap = await transaction.get(matchRef);
+      const matchData = matchSnap.data()!;
+
+      if (
+        matchData.status === "lobby_pending" &&
+        matchData.lobby_id &&
+        allSeated
+      ) {
+        transaction.update(matchRef, {
+          status: "in_game",
+          updated_at: FieldValue.serverTimestamp(),
+        });
+        return { success: true, transitionedToInGame: true };
+      }
+
+      return { success: true, transitionedToInGame: false };
+    });
+  },
+);
+
+/**
+ * 着席解除
+ */
+export const unsetSeated = onCall(
+  { region: "asia-northeast1" },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "認証が必要です");
+    }
+    const { matchId } = request.data;
+    const userId = request.auth.uid;
+
+    const matchRef = db.collection("matches").doc(matchId);
+    const memberRef = matchRef.collection("members").doc(userId);
+
+    const memberSnap = await memberRef.get();
+    if (!memberSnap.exists) {
+      throw new HttpsError(
+        "permission-denied",
+        "このマッチの参加者ではありません",
+      );
+    }
+
+    await memberRef.update({
+      seated_at: null,
+    });
+
+    return { success: true };
+  },
+);

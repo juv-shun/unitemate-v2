@@ -12,12 +12,18 @@ import {
 	changeSeat as changeSeatFn,
 	createDraftSession,
 	createMatch as createMatchFn,
+	createReport as createReportFn,
 	joinAsParticipant as joinAsParticipantFn,
 	joinAsSpectator as joinAsSpectatorFn,
 	leaveMatch as leaveMatchFn,
+	setLobbyId as setLobbyIdFn,
+	setLobbyIssue as setLobbyIssueFn,
+	setSeated as setSeatedFn,
 	subscribeToDraftSession,
 	subscribeToMatch,
 	subscribeToMembers,
+	unsetLobbyIssue as unsetLobbyIssueFn,
+	unsetSeated as unsetSeatedFn,
 } from "./match";
 import type { DraftSession, Match, Member, Team } from "./types";
 
@@ -40,6 +46,14 @@ interface MatchContextType {
 	leaveMatch: () => Promise<void>;
 	changeSeat: (newTeam: Team, newSeatNo: number) => Promise<void>;
 	setCurrentMatchId: (matchId: string | null) => void;
+	
+	// ロビー共有アクション（フェーズ1）
+	setLobbyId: (lobbyId: string) => Promise<{ transitionedToInGame: boolean }>;
+	setSeated: () => Promise<{ transitionedToInGame: boolean }>;
+	unsetSeated: () => Promise<void>;
+	setLobbyIssue: () => Promise<void>;
+	unsetLobbyIssue: () => Promise<void>;
+	createReport: (reportedUserId: string) => Promise<void>;
 
 	// 計算プロパティ
 	participantCount: number;
@@ -49,6 +63,8 @@ interface MatchContextType {
 	firstTeamMembers: Member[];
 	secondTeamMembers: Member[];
 	isDraftReady: boolean; // 10人揃い
+	isAllSeated: boolean; // 全員着席
+	isLobbyReady: boolean; // ロビーID設定済み & 全員着席
 }
 
 const MatchContext = createContext<MatchContextType | null>(null);
@@ -213,6 +229,96 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		[user, currentMatchId],
 	);
 
+	// ロビー共有アクション（フェーズ1）
+	const setLobbyId = useCallback(
+		async (lobbyId: string): Promise<{ transitionedToInGame: boolean }> => {
+			if (!currentMatchId) throw new Error("No match selected");
+			try {
+				const result = await setLobbyIdFn(currentMatchId, lobbyId);
+				return { transitionedToInGame: result.transitionedToInGame };
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : "Failed to set lobby ID";
+				setError(errorMessage);
+				throw err;
+			}
+		},
+		[currentMatchId],
+	);
+
+	const setSeated = useCallback(
+		async (): Promise<{ transitionedToInGame: boolean }> => {
+			if (!currentMatchId) throw new Error("No match selected");
+			try {
+				const result = await setSeatedFn(currentMatchId);
+				return { transitionedToInGame: result.transitionedToInGame };
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : "Failed to set seated";
+				setError(errorMessage);
+				throw err;
+			}
+		},
+		[currentMatchId],
+	);
+
+	const unsetSeated = useCallback(async (): Promise<void> => {
+		if (!currentMatchId) throw new Error("No match selected");
+		try {
+			await unsetSeatedFn(currentMatchId);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to unset seated";
+			setError(errorMessage);
+			throw err;
+		}
+	}, [currentMatchId]);
+
+	const setLobbyIssue = useCallback(async (): Promise<void> => {
+		if (!user || !currentMatchId) throw new Error("User not authenticated");
+		try {
+			await setLobbyIssueFn(currentMatchId, user.uid);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to set lobby issue";
+			setError(errorMessage);
+			throw err;
+		}
+	}, [user, currentMatchId]);
+
+	const unsetLobbyIssue = useCallback(async (): Promise<void> => {
+		if (!user || !currentMatchId) throw new Error("User not authenticated");
+		try {
+			await unsetLobbyIssueFn(currentMatchId, user.uid);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to unset lobby issue";
+			setError(errorMessage);
+			throw err;
+		}
+	}, [user, currentMatchId]);
+
+	const createReport = useCallback(
+		async (reportedUserId: string): Promise<void> => {
+			if (!user || !currentMatchId || !currentMatch)
+				throw new Error("Invalid state");
+			try {
+				await createReportFn(
+					currentMatchId,
+					user.uid,
+					reportedUserId,
+					currentMatch.created_at,
+				);
+			} catch (err) {
+				const errorMessage =
+					err instanceof Error ? err.message : "Failed to create report";
+				setError(errorMessage);
+				throw err;
+			}
+		},
+		[user, currentMatchId, currentMatch],
+	);
+
 	// 計算プロパティ
 	const participantCount = useMemo(
 		() => members.filter((m) => m.role === "participant").length,
@@ -252,6 +358,18 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		[currentMatch],
 	);
 
+	const isAllSeated = useMemo(() => {
+		const participants = members.filter((m) => m.role === "participant");
+		return (
+			participants.length === 10 &&
+			participants.every((m) => m.seated_at != null)
+		);
+	}, [members]);
+
+	const isLobbyReady = useMemo(() => {
+		return currentMatch?.lobby_id != null && isAllSeated;
+	}, [currentMatch, isAllSeated]);
+
 	return (
 		<MatchContext.Provider
 			value={{
@@ -266,6 +384,12 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				leaveMatch,
 				changeSeat,
 				setCurrentMatchId,
+				setLobbyId,
+				setSeated,
+				unsetSeated,
+				setLobbyIssue,
+				unsetLobbyIssue,
+				createReport,
 				participantCount,
 				isParticipant,
 				isSpectator,
@@ -273,6 +397,8 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				firstTeamMembers,
 				secondTeamMembers,
 				isDraftReady,
+				isAllSeated,
+				isLobbyReady,
 			}}
 		>
 			{children}

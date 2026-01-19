@@ -27,6 +27,8 @@ export interface Match {
 	capacity: 10;
 	auto_start: true;
 	first_team?: Team;
+	lobby_id?: string; // 8桁数字（先頭0許可）
+	lobby_updated_at?: Date; // ロビーID更新時刻
 	created_at: Date;
 	updated_at: Date;
 }
@@ -39,6 +41,9 @@ export interface Member {
 	team?: Team; // participantのみ
 	seat_no?: number; // 1-5、participantのみ
 	joined_at: Date;
+	seated_at?: Date | null; // 着席時刻（nullは未着席）
+	lobby_issue?: boolean; // 困り中フラグ
+	lobby_issue_at?: Date | null; // 困り中設定時刻
 	// 表示用（usersコレクションからjoin）
 	display_name?: string;
 	photo_url?: string;
@@ -82,4 +87,15 @@ export interface MatchState {
 export interface CreateMatchInput {
 	// phase1固定、source_type=manual固定
 	// 将来的に拡張可能
+}
+
+// Report型（通報）
+export interface Report {
+	id: string;
+	match_id: string;
+	reporter_user_id: string;
+	reported_user_id: string;
+	reason: "not_seated";
+	match_created_at: Date;
+	reported_at: Date;
 }

@@ -1,4 +1,5 @@
 import {
+	addDoc,
 	collection,
 	deleteDoc,
 	doc,
@@ -15,7 +16,8 @@ import {
 	updateDoc,
 	where,
 } from "firebase/firestore";
-import { db } from "../../firebase";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../../firebase";
 import type { DraftSession, Match, Member, Team, Turn } from "./types";
 
 // =====================================
@@ -60,6 +62,8 @@ export async function getMatch(matchId: string): Promise<Match | null> {
 		capacity: data.capacity,
 		auto_start: data.auto_start,
 		first_team: data.first_team,
+		lobby_id: data.lobby_id,
+		lobby_updated_at: data.lobby_updated_at?.toDate(),
 		created_at: data.created_at?.toDate(),
 		updated_at: data.updated_at?.toDate(),
 	};
@@ -318,6 +322,9 @@ export async function getMembers(matchId: string): Promise<Member[]> {
 		team: doc.data().team,
 		seat_no: doc.data().seat_no,
 		joined_at: doc.data().joined_at?.toDate(),
+		seated_at: doc.data().seated_at?.toDate() ?? null,
+		lobby_issue: doc.data().lobby_issue,
+		lobby_issue_at: doc.data().lobby_issue_at?.toDate() ?? null,
 	}));
 }
 
@@ -597,6 +604,8 @@ export function subscribeToMatch(
 					capacity: data.capacity,
 					auto_start: data.auto_start,
 					first_team: data.first_team,
+					lobby_id: data.lobby_id,
+					lobby_updated_at: data.lobby_updated_at?.toDate(),
 					created_at: data.created_at?.toDate(),
 					updated_at: data.updated_at?.toDate(),
 				});
@@ -649,6 +658,9 @@ export function subscribeToMembers(
 							team: memberData.team,
 							seat_no: memberData.seat_no,
 							joined_at: memberData.joined_at?.toDate(),
+							seated_at: memberData.seated_at?.toDate() ?? null,
+							lobby_issue: memberData.lobby_issue,
+							lobby_issue_at: memberData.lobby_issue_at?.toDate() ?? null,
 							display_name: userData?.display_name,
 							photo_url: userData?.photo_url,
 						};
@@ -716,4 +728,91 @@ export function subscribeToDraftSession(
 			}
 		},
 	);
+}
+
+// =====================================
+// ロビー共有機能（フェーズ1）
+// =====================================
+
+/**
+ * ロビーID設定（Callable経由）
+ */
+export async function setLobbyId(
+	matchId: string,
+	lobbyId: string,
+): Promise<{ success: boolean; status: string; transitionedToInGame: boolean }> {
+	const fn = httpsCallable<
+		{ matchId: string; lobbyId: string },
+		{ success: boolean; status: string; transitionedToInGame: boolean }
+	>(functions, "setMatchLobbyId");
+	const result = await fn({ matchId, lobbyId });
+	return result.data;
+}
+
+/**
+ * 着席設定（Callable経由 - サーバ側で遷移判定）
+ */
+export async function setSeated(
+	matchId: string,
+): Promise<{ success: boolean; transitionedToInGame: boolean }> {
+	const fn = httpsCallable<
+		{ matchId: string },
+		{ success: boolean; transitionedToInGame: boolean }
+	>(functions, "setSeated");
+	const result = await fn({ matchId });
+	return result.data;
+}
+
+/**
+ * 着席解除（Callable経由）
+ */
+export async function unsetSeated(
+	matchId: string,
+): Promise<{ success: boolean }> {
+	const fn = httpsCallable<
+		{ matchId: string },
+		{ success: boolean }
+	>(functions, "unsetSeated");
+	const result = await fn({ matchId });
+	return result.data;
+}
+
+/**
+ * 困り中設定（クライアント直接更新）
+ */
+export async function setLobbyIssue(matchId: string, userId: string): Promise<void> {
+	await updateDoc(doc(db, "matches", matchId, "members", userId), {
+		lobby_issue: true,
+		lobby_issue_at: serverTimestamp(),
+	});
+}
+
+/**
+ * 困り中解除（クライアント直接更新）
+ */
+export async function unsetLobbyIssue(matchId: string, userId: string): Promise<void> {
+	await updateDoc(doc(db, "matches", matchId, "members", userId), {
+		lobby_issue: false,
+		lobby_issue_at: null,
+	});
+}
+
+/**
+ * 通報作成（クライアント直接作成）
+ */
+export async function createReport(
+	matchId: string,
+	reporterUserId: string,
+	reportedUserId: string,
+	matchCreatedAt: Date,
+): Promise<string> {
+	const docRef = await addDoc(collection(db, "reports"), {
+		match_id: matchId,
+		reporter_user_id: reporterUserId,
+		reported_user_id: reportedUserId,
+		reason: "not_seated",
+		match_created_at: Timestamp.fromDate(matchCreatedAt),
+		reported_at: serverTimestamp(),
+	});
+	return docRef.id;
 }
