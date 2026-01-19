@@ -154,7 +154,7 @@ src/
 実装前に必ず関連するドキュメントとメモリを読んで、コンテキストを理解してください。
 
 #### プロジェクトドキュメント（docs/）
-- **要件確認**: `docs/requirements_overview.md` で機能要件を確認
+- **要件確認**: `docs/requirements/overview.md` で機能要件を確認
 - **データ設計**: `docs/db_spec.md` でFirestoreスキーマを確認
 
 #### Serenaメモリ（.serena/memory/）
@@ -190,6 +190,6 @@ Firestore操作を実装する際は、必ず`firestore.rules`を確認してく
 ## 重要な原則
 
 1. **トークン節約**: Serena MCPツールを最大限活用し、ファイル全体読み込みを避ける
-2. **ドキュメント参照**: 実装前に `docs/requirements_overview.md`（要件定義）と `docs/db_spec.md`（データベース設計）を確認
+2. **ドキュメント参照**: 実装前に `docs/requirements/overview.md`（要件定義）と `docs/db_spec.md`（データベース設計）を確認
 3. **セキュリティ**: Firestoreルールを遵守し、クライアント側の制約を理解する
 4. **一貫性**: 既存のパターンに従い、コードスタイルを統一する

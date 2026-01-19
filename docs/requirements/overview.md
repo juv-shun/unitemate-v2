@@ -69,7 +69,7 @@
 マッチング実行時は、できるだけ多くの試合を一度に生成する（例：30人なら3試合）。
 
 ### 3.3 ロビーID共有要件
-詳細は `docs/requirements_phase1.md` を参照。
+詳細は `docs/requirements/phase1.md` を参照。
 
 ---
 
@@ -79,12 +79,12 @@
 * 対象: マッチング成立し、ロビーID共有フローを経た参加者
 * タイミング: 試合終了後（またはロビー共有後の一定時間後）
 * 入力内容: 勝ち / 負け / 無効（ノーコンテスト）
-* 詳細: `docs/requirements_phase2.md` を参照
+* 詳細: `docs/requirements/phase2.md` を参照
 
 ### 4.2 勝敗判定ロジック
 * 参加者からの報告定数を基に、システムが自動で勝敗を確定させる（多数決方式想定）
 * 確定した勝敗データはDBに蓄積する
-* 詳細: `docs/requirements_phase2.md` を参照
+* 詳細: `docs/requirements/phase2.md` を参照
 
 ---
 
@@ -92,14 +92,14 @@
 
 詳細なマッチングロジック、レート計算仕様については、別紙を参照のこと。
 
-* 参照先: `docs/requirements_phase3.md`
+* 参照先: `docs/requirements/phase3.md`
 
 ---
 
 ## 6. フェーズ4要件: ドラフトピックシミュレーター
 
 * マッチング機能に依存せず、ドラフトのUI/UXとロジックを検証するための独立モジュールとして開発する
-* `docs/requirements_phase4.md` を参照。
+* `docs/requirements/phase4.md` を参照。
 
 ---
 
