@@ -187,7 +187,6 @@ src/
 | フィールド | 型 | 説明 |
 |-----------|-----|------|
 | `display_name` | string | 表示名（ゲーム内ユーザー名） |
-| `email` | string | メールアドレス |
 | `photo_url` | string | プロフィール画像URL |
 | `is_onboarded` | boolean | オンボーディング完了フラグ |
 | `queue_status` | string \| null | "waiting" / "matched" / null |
