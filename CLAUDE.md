@@ -318,7 +318,7 @@ return () => unsubscribe();
 実装前に必ず関連するドキュメントとメモリを読んで、コンテキストを理解してください。
 
 #### プロジェクトドキュメント（docs/）
-- **要件確認**: `docs/serveice_requirements.md` で機能要件を確認
+- **要件確認**: `docs/requirements_overview.md` で機能要件を確認
 - **データ設計**: `docs/db_spec.md` でFirestoreスキーマを確認
 - **実装計画**: `docs/開発計画書/` で詳細な実装計画を確認
 
@@ -405,7 +405,7 @@ firebase deploy
 ## 参考リソース
 
 ### ドキュメント（docs/）
-- **要件定義書**: `docs/serveice_requirements.md` - プロジェクト全体の要件定義
+- **要件定義書**: `docs/requirements_overview.md` - プロジェクト全体の要件定義
 - **データベース設計書**: `docs/db_spec.md` - Firestoreコレクション構造の詳細
 - **開発ガイド**: `docs/development_guide.md` - 開発プロセスのガイドライン
 - **開発計画書**:
@@ -423,7 +423,7 @@ firebase deploy
 ## 重要な原則
 
 1. **トークン節約**: Serena MCPツールを最大限活用し、ファイル全体読み込みを避ける
-2. **ドキュメント参照**: 実装前に `docs/serveice_requirements.md`（要件定義）と `docs/db_spec.md`（データベース設計）を確認
+2. **ドキュメント参照**: 実装前に `docs/requirements_overview.md`（要件定義）と `docs/db_spec.md`（データベース設計）を確認
 3. **型安全性**: TypeScriptの型を明示的に付け、型エラーを防ぐ
 4. **セキュリティ**: Firestoreルールを遵守し、クライアント側の制約を理解する
 5. **一貫性**: 既存のパターンに従い、コードスタイルを統一する
