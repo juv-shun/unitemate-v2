@@ -22,7 +22,6 @@
   - rating_changes（サブコレクション）
   - penalties（サブコレクション）
   - pick_histories（サブコレクション）
-- queue_entries（キュー）
 - matches（試合/ルーム）
   - members（サブコレクション）
   - reports（サブコレクション）
@@ -50,8 +49,14 @@
 | total_matches | number | 試合数（結果確定済みのみ） |
 | total_wins | number | 勝利数（結果確定済みのみ） |
 | recent_results | array | 直近20試合の結果（結果確定済みのみ） |
+| queue_status | string \| null | キュー状態 (waiting / matched / null) |
+| queue_joined_at | timestamp \| null | キュー参加時刻 |
+| matched_match_id | string \| null | マッチ成立時の試合ID |
+| banned_until | timestamp \| null | ペナルティによるインキュー禁止期限 |
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
+
+インデックス: queue_status + queue_joined_at
 
 recent_results 要素:
 - match_id: string
@@ -61,19 +66,7 @@ recent_results 要素:
 
 ---
 
-### 3.2 queue_entries
-インキュー状態管理（フェーズ1/2）。
 
-| フィールド名 | 型 | 説明 |
-| --- | --- | --- |
-| user_id | string | ユーザーID |
-| queued_at | timestamp | キュー参加時刻 |
-| status | string | queued / matched / canceled |
-| matched_match_id | string | マッチ成立時の試合ID |
-
-インデックス: status + queued_at
-
----
 
 ### 3.3 matches
 試合単位のデータ。手動ルーム作成と自動マッチングの両方に利用。
@@ -318,7 +311,7 @@ Elo反映履歴（ユーザー配下サブコレクション）。現状は未�
 
 ### 5.1 フェーズ1/2 マッチング〜ドラフト
 ※フェーズ1の自動マッチ成立時は status を lobby_pending とする。
-1. queue_entries に queued を追加  
+1. users の queue_status を waiting に更新  
 2. マッチ成立で matches, matches/{matchId}/members を作成  
 3. draft_sessions を作成し、draft_sessions/{draftId}/turns を事前生成  
 4. turn_started を通知し、決定したら draft_sessions/{draftId}/actions を追加  
@@ -355,5 +348,5 @@ Elo反映履歴（ユーザー配下サブコレクション）。現状は未�
 
 ## 7. フェーズ別利用範囲
 
-- フェーズ1: users, queue_entries, matches, members（match_result含む）, draft_sessions, turns, actions, requests, selections, lobby_infos, pick_histories
+- フェーズ1: users, matches, members（match_result含む）, draft_sessions, turns, actions, requests, selections, lobby_infos, pick_histories
 - フェーズ2: 上記 + match_results, result_votes, rating_changes, penalties
