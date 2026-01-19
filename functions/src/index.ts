@@ -119,7 +119,7 @@ const commitMatch = async (
 
 export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
-  const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 180);
+  const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
   const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 50);
 
   const snapshot = await db
@@ -165,7 +165,7 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
 
 export const runMatchmakingManual = onRequest(async (req, res) => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
-  const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 180);
+  const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
   const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 50);
 
   const snapshot = await db
