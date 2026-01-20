@@ -83,7 +83,7 @@ export function MatchLobby() {
 		}
 
 		// 既存ロビーIDがある場合は確認ダイアログを表示
-		if (currentMatch.lobby_id) {
+		if (currentMatch?.lobby_id) {
 			setShowLobbyOverwriteModal(true);
 			return;
 		}
