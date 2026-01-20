@@ -4,38 +4,41 @@ import { useAuth } from "./AuthContext";
 import { ensureUserExists } from "./user";
 
 export function LoginPage() {
-	const { user, login, loading } = useAuth();
-	const navigate = useNavigate();
+  const { user, login, loading } = useAuth();
+  const navigate = useNavigate();
 
-	useEffect(() => {
-		if (user) {
-			// ログイン後にFirestoreにユーザーが存在することを確認する
-			ensureUserExists(user).then(({ isNewUser }) => {
-				if (isNewUser) {
-					navigate("/onboarding");
-				} else {
-					navigate("/");
-				}
-			});
-		}
-	}, [user, navigate]);
+  useEffect(() => {
+    if (user) {
+      // ログイン後にFirestoreにユーザーが存在することを確認する
+      ensureUserExists(user).then(({ isNewUser }) => {
+        if (isNewUser) {
+          navigate("/onboarding");
+        } else {
+          navigate("/");
+        }
+      });
+    }
+  }, [user, navigate]);
 
-	if (loading) return <div>Loading...</div>;
+  if (loading) return <div>Loading...</div>;
 
-	return (
-		<div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
-			<div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-sm w-full text-center">
-				<h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
-					Unitemate Login
-				</h1>
-				<button
-					type="button"
-					onClick={login}
-					className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
-				>
-					Sign in with Google
-				</button>
-			</div>
-		</div>
-	);
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 dark:bg-gray-900">
+      <div className="p-8 bg-white dark:bg-gray-800 rounded-lg shadow-md max-w-sm w-full text-center">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">
+          Unitemate Login
+        </h1>
+        <button
+          type="button"
+          onClick={login}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition-colors duration-200"
+        >
+          Sign in with Google
+        </button>
+        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          本サービスでは、メールアドレスなどの個人情報は一切受け取りません。
+        </p>
+      </div>
+    </div>
+  );
 }
