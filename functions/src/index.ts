@@ -90,8 +90,7 @@ const computeRatingDeltas = (
     const second = secondTeam[i];
     const firstRating = ratings[first.user_id] ?? DEFAULT_RATING;
     const secondRating = ratings[second.user_id] ?? DEFAULT_RATING;
-    const expectedFirst =
-      1 / (1 + 10 ** ((secondRating - firstRating) / 400));
+    const expectedFirst = 1 / (1 + 10 ** ((secondRating - firstRating) / 400));
     const expectedSecond = 1 - expectedFirst;
     const deltaFirst = Math.round(K_FACTOR * (firstScore - expectedFirst));
     const deltaSecond = Math.round(K_FACTOR * (secondScore - expectedSecond));
@@ -231,8 +230,14 @@ const tallyMatchResults = (
   return { counts, totalVotes };
 };
 
-const decideFinalResult = (counts: Record<FinalResult, number>): FinalResult => {
-  const maxValue = Math.max(counts.first_win, counts.second_win, counts.invalid);
+const decideFinalResult = (
+  counts: Record<FinalResult, number>,
+): FinalResult => {
+  const maxValue = Math.max(
+    counts.first_win,
+    counts.second_win,
+    counts.invalid,
+  );
   const winners = (Object.keys(counts) as FinalResult[]).filter(
     (key) => counts[key] === maxValue,
   );
@@ -262,7 +267,9 @@ const updateUserStats = async ({
   finalResult: FinalResult;
   decidedAt: Timestamp;
 }): Promise<void> => {
-  const participants = members.filter((member) => member.role === "participant");
+  const participants = members.filter(
+    (member) => member.role === "participant",
+  );
   if (participants.length === 0) return;
 
   const userRefs = participants.map((member) =>
@@ -399,7 +406,7 @@ const finalizeMatch = async ({
 export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
   const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
-  const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 50);
+  const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 200);
 
   const snapshot = await db
     .collection("users")
@@ -446,7 +453,7 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
 export const runMatchmakingManual = onRequest(async (req, res) => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
   const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
-  const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 50);
+  const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 200);
 
   const snapshot = await db
     .collection("users")
@@ -662,7 +669,11 @@ export const submitMatchResult = onCall(
       forceFinalize: false,
     });
 
-    return { success: true, finalized: result.finalized, result: result.finalResult };
+    return {
+      success: true,
+      finalized: result.finalized,
+      result: result.finalResult,
+    };
   },
 );
 
@@ -746,7 +757,8 @@ const applyPenalty = async (
 
     // banned_untilを更新（既存より後の場合のみ）
     const shouldUpdateBannedUntil =
-      !currentBannedUntil || penaltyEndTime.toMillis() > currentBannedUntil.toMillis();
+      !currentBannedUntil ||
+      penaltyEndTime.toMillis() > currentBannedUntil.toMillis();
 
     if (shouldUpdateBannedUntil) {
       transaction.update(userRef, {
