@@ -1,8 +1,9 @@
 import {
-  type Unsubscribe,
   doc,
   onSnapshot,
+  runTransaction,
   serverTimestamp,
+  type Unsubscribe,
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../../firebase";
@@ -25,6 +26,29 @@ export function isQueueClosedAt(date: Date): boolean {
 }
 
 export async function cancelQueue(uid: string): Promise<void> {
+  const userRef = doc(db, "users", uid);
+
+  // マッチング待機中の場合のみキャンセルする
+  // マッチ成立済み（matched）の場合は、ログアウトしても状態を維持する
+  await runTransaction(db, async (transaction) => {
+    const userDoc = await transaction.get(userRef);
+    if (!userDoc.exists()) return;
+
+    const data = userDoc.data();
+    if (data.queue_status === "waiting") {
+      transaction.update(userRef, {
+        queue_status: null,
+        queue_joined_at: null,
+        matched_match_id: null,
+      });
+    }
+  });
+}
+
+/**
+ * 強制的にキュー状態をリセットする（マッチ終了時など）
+ */
+export async function resetQueueState(uid: string): Promise<void> {
   const userRef = doc(db, "users", uid);
   await updateDoc(userRef, {
     queue_status: null,
@@ -55,7 +79,12 @@ export function subscribeToQueueStatus(
         bannedUntil: data.banned_until?.toDate() ?? null,
       });
     } else {
-      callback({ status: null, joinedAt: null, matchedMatchId: null, bannedUntil: null });
+      callback({
+        status: null,
+        joinedAt: null,
+        matchedMatchId: null,
+        bannedUntil: null,
+      });
     }
   });
 }

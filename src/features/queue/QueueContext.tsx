@@ -14,6 +14,7 @@ import {
   cancelQueue as cancelQueueFn,
   isQueueClosedAt,
   type QueueData,
+  resetQueueState as resetQueueStateFn,
   startQueue as startQueueFn,
   subscribeToQueueStatus,
 } from "./queue";
@@ -29,6 +30,7 @@ interface QueueContextType {
   remainingBanTime: number | null;
   startQueue: () => Promise<void>;
   cancelQueue: () => Promise<void>;
+  resetQueueState: () => Promise<void>;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
@@ -116,6 +118,11 @@ export function QueueProvider({ children }: QueueProviderProps) {
     await cancelQueueFn(user.uid);
   }, [user]);
 
+  const resetQueueState = useCallback(async () => {
+    if (!user) return;
+    await resetQueueStateFn(user.uid);
+  }, [user]);
+
   // 最新のqueueStatusをRefで保持（cleanup関数内で参照するため）
   const latestQueueStatus = useRef(queueStatus);
   useEffect(() => {
@@ -158,6 +165,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
         remainingBanTime,
         startQueue,
         cancelQueue,
+        resetQueueState,
       }}
     >
       {children}

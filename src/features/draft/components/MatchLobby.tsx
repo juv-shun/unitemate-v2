@@ -9,7 +9,7 @@ import type { MatchResult, Member } from "../types";
 
 export function MatchLobby() {
   const { user } = useAuth();
-  const { cancelQueue } = useQueue();
+  const { resetQueueState } = useQueue();
   const navigate = useNavigate();
   const {
     currentMatch,
@@ -173,7 +173,7 @@ export function MatchLobby() {
     setEndMatchSubmitting(true);
     try {
       await leaveMatch(endMatchResult as MatchResult);
-      await cancelQueue();
+      await resetQueueState();
       navigate("/");
     } catch (err) {
       console.error("Failed to end match:", err);
