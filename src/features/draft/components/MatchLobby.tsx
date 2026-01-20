@@ -39,6 +39,10 @@ export function MatchLobby() {
   const [endMatchResult, setEndMatchResult] = useState<MatchResult | "">("");
   const [endMatchSubmitting, setEndMatchSubmitting] = useState(false);
   const [endMatchError, setEndMatchError] = useState("");
+  const [bannedPokemons, setBannedPokemons] = useState<
+    Array<{ id: string; name: string; type: string; imageUrl: string }>
+  >([]);
+  const [loadingBanned, setLoadingBanned] = useState(false);
 
   useEffect(() => {
     setShowLobbyScreen(false);
@@ -47,6 +51,21 @@ export function MatchLobby() {
     setEndMatchResult("");
     setEndMatchError("");
   }, [currentMatch?.id]);
+
+  useEffect(() => {
+    const shouldLoad = !showLobbyScreen && myMember?.seated_at == null;
+    if (shouldLoad) {
+      setLoadingBanned(true);
+      fetch("/banned_pokemons.json")
+        .then((res) => res.json())
+        .then((data) => setBannedPokemons(data))
+        .catch((err) => {
+          console.error("Failed to load banned pokemons:", err);
+          setBannedPokemons([]);
+        })
+        .finally(() => setLoadingBanned(false));
+    }
+  }, [showLobbyScreen, myMember?.seated_at]);
 
   // ロビーID設定
   const handleSetLobbyId = async () => {
@@ -190,26 +209,155 @@ export function MatchLobby() {
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div
             className="absolute inset-0"
-            style={{ backgroundColor: "rgba(2, 6, 23, 0.78)" }}
+            style={{ backgroundColor: "rgba(2, 6, 23, 0.88)" }}
           />
           <div
-            className="relative w-full max-w-md rounded-2xl p-6 text-center"
+            className="relative w-full max-w-md rounded-2xl p-8 text-center overflow-hidden"
             style={{
               backgroundColor: "var(--color-surface)",
               boxShadow:
-                "0 24px 60px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
-              border: "1px solid rgba(148, 163, 184, 0.15)",
+                "0 0 80px rgba(6, 182, 212, 0.3), 0 24px 60px rgba(2, 6, 23, 0.9), inset 0 1px 0 rgba(255,255,255,0.05)",
+              border: "1px solid rgba(6, 182, 212, 0.3)",
             }}
           >
+            {/* Animated corner accents */}
+            <div
+              className="absolute top-0 left-0 w-16 h-16 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(135deg, var(--color-accent-cyan) 0%, transparent 70%)",
+                opacity: 0.4,
+              }}
+            />
+            <div
+              className="absolute bottom-0 right-0 w-16 h-16 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(-45deg, var(--color-accent-pink) 0%, transparent 70%)",
+                opacity: 0.4,
+              }}
+            />
+
+            {/* Pulsing border glow */}
+            <div
+              className="absolute inset-0 rounded-2xl pointer-events-none animate-pulse-slow"
+              style={{
+                boxShadow: "inset 0 0 30px rgba(6, 182, 212, 0.15)",
+              }}
+            />
+
+            {/* Status badge */}
+            <div
+              className="inline-block px-4 py-1.5 rounded-full text-xs font-bold tracking-widest mb-4 animate-pulse-glow"
+              style={{
+                fontFamily: "var(--font-display)",
+                background:
+                  "linear-gradient(90deg, var(--color-accent-cyan), var(--color-accent-pink))",
+                color: "var(--color-base)",
+                boxShadow:
+                  "0 0 20px rgba(6, 182, 212, 0.6), 0 0 40px rgba(236, 72, 153, 0.4)",
+              }}
+            >
+              MATCH FOUND
+            </div>
+
+            {/* Main title with gradient */}
             <h2
-              className="text-2xl font-bold tracking-wide"
+              className="text-4xl font-black tracking-wider mb-2 animate-slide-in-up"
+              style={{
+                fontFamily: "var(--font-display)",
+                background:
+                  "linear-gradient(135deg, var(--color-accent-cyan) 0%, var(--color-accent-pink) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+                textShadow: "0 0 40px rgba(6, 182, 212, 0.3)",
+                letterSpacing: "0.1em",
+              }}
+            >
+              READY
+            </h2>
+
+            {/* Subtitle */}
+            <p
+              className="text-xs tracking-widest mb-6 opacity-70"
               style={{
                 fontFamily: "var(--font-display)",
                 color: "var(--color-text-primary)",
               }}
             >
-              マッチ成立
-            </h2>
+              PREPARE FOR BATTLE
+            </p>
+
+            {/* 使用禁止ポケモン表示 */}
+            {!loadingBanned && (
+              <div className="mt-6 w-full">
+                {bannedPokemons.length === 0 ? (
+                  <div
+                    className="text-xs font-bold tracking-widest text-center py-3 px-4 rounded-lg"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--color-text-secondary)",
+                      backgroundColor: "rgba(15, 23, 42, 0.4)",
+                      border: "1px solid rgba(203, 213, 225, 0.1)",
+                    }}
+                  >
+                    使用禁止ポケモンなし
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div
+                      className="text-xs font-bold tracking-widest text-center"
+                      style={{
+                        fontFamily: "var(--font-display)",
+                        color: "var(--color-danger)",
+                        textShadow: "0 0 10px rgba(239, 68, 68, 0.5)",
+                      }}
+                    >
+                      ⚠ 使用禁止ポケモン
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {bannedPokemons.map((pokemon) => (
+                        <div
+                          key={pokemon.id}
+                          className="relative group cursor-pointer"
+                          title={pokemon.name}
+                        >
+                          <div
+                            className="absolute inset-0 rounded-lg blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style={{
+                              backgroundColor: "var(--color-danger)",
+                              filter: "blur(8px)",
+                            }}
+                          />
+                          <img
+                            src={pokemon.imageUrl}
+                            alt="使用禁止ポケモン"
+                            className="relative w-16 h-16 rounded-lg border-2 shadow-lg transition-all duration-200 group-hover:scale-110 group-hover:shadow-2xl"
+                            style={{
+                              borderColor: "var(--color-danger)",
+                              boxShadow:
+                                "0 4px 12px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                            }}
+                          />
+                          <div
+                            className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                            style={{
+                              backgroundColor: "var(--color-danger)",
+                              color: "var(--color-base)",
+                              boxShadow: "0 2px 8px rgba(239, 68, 68, 0.6)",
+                            }}
+                          >
+                            ✕
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {entryError && (
               <p className="mt-4 text-sm font-bold text-red-400">
                 {entryError}
@@ -219,15 +367,52 @@ export function MatchLobby() {
               type="button"
               onClick={handleSetSeated}
               disabled={seatingInProgress}
-              className="mt-6 w-full py-3 rounded-lg text-sm font-semibold tracking-wide transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative mt-6 w-full py-4 rounded-lg text-sm font-bold tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden hover:scale-105 active:scale-95"
               style={{
                 fontFamily: "var(--font-display)",
                 color: "var(--color-base)",
-                backgroundColor: "var(--color-accent-cyan)",
-                boxShadow: "0 4px 20px rgba(6, 182, 212, 0.4)",
+                background:
+                  "linear-gradient(135deg, var(--color-accent-cyan) 0%, var(--color-accent-pink) 100%)",
+                boxShadow:
+                  "0 8px 32px rgba(6, 182, 212, 0.5), 0 0 20px rgba(236, 72, 153, 0.3)",
               }}
             >
-              {seatingInProgress ? "処理中..." : "ロビーへ進む"}
+              {/* Shimmer effect */}
+              <div
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  background:
+                    "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.2) 50%, transparent 100%)",
+                  transform: "translateX(-100%)",
+                  animation: "shimmer 2s infinite",
+                }}
+              />
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {seatingInProgress ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    LOADING...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M13 7l5 5m0 0l-5 5m5-5H6"
+                      />
+                    </svg>
+                    ENTER LOBBY
+                  </>
+                )}
+              </span>
             </button>
           </div>
         </div>
@@ -665,12 +850,56 @@ export function MatchLobby() {
 					75% { transform: translateX(4px); }
 				}
 
+				@keyframes pulse-slow {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0.6; }
+				}
+
+				@keyframes pulse-glow {
+					0%, 100% {
+						opacity: 1;
+						transform: scale(1);
+					}
+					50% {
+						opacity: 0.85;
+						transform: scale(1.02);
+					}
+				}
+
+				@keyframes slide-in-up {
+					from {
+						opacity: 0;
+						transform: translateY(20px);
+					}
+					to {
+						opacity: 1;
+						transform: translateY(0);
+					}
+				}
+
+				@keyframes shimmer {
+					0% { transform: translateX(-100%); }
+					100% { transform: translateX(200%); }
+				}
+
 				.animate-fade-in {
 					animation: fade-in 0.6s ease-out;
 				}
 
 				.animate-shake {
 					animation: shake 0.5s ease-out;
+				}
+
+				.animate-pulse-slow {
+					animation: pulse-slow 3s ease-in-out infinite;
+				}
+
+				.animate-pulse-glow {
+					animation: pulse-glow 2s ease-in-out infinite;
+				}
+
+				.animate-slide-in-up {
+					animation: slide-in-up 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 				}
 			`}</style>
     </div>

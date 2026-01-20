@@ -14,7 +14,7 @@ const rules: Rule[] = [
 	},
 	{
 		icon: "🚫",
-		text: "所持ライセンスが16枚未満のプレイヤーは参加禁止",
+		text: "使用禁止ポケモンは運営サイドで決定 (マッチ成立時に表示されます)",
 		delay: 0.1,
 	},
 	{
@@ -26,12 +26,7 @@ const rules: Rule[] = [
 		icon: "🌏",
 		text: "推奨サーバー: AS02",
 		delay: 0.3,
-	},
-	{
-		icon: "🐣",
-		text: "ゲーム中で使用可能なポケモン全て(新ポケモンもバグがあっても利用可)",
-		delay: 0.4,
-	},
+	}
 ];
 
 export function GameRules() {
