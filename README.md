@@ -1,73 +1,34 @@
-# React + TypeScript + Vite
+# UniteMate (ユナメイト)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+ポケモンユナイトのドラフトピック形式のカスタムマッチをサポートするWebアプリケーションです。
+競技シーンのような BAN/PICK を手軽に体験し、戦略的な試合を楽しむためのプラットフォームを提供します。
 
-Currently, two official plugins are available:
+## サービス概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+UniteMateは、プレイヤー同士のマッチングからドラフトピックの進行、そして試合開始までのフローをスムーズに行うためのツールです。
+野良でのドラフト体験や、チーム練習、大会のような緊張感のある試合環境を実現します。
 
-## React Compiler
+## 主な機能
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### 🎮 マッチングシステム
+- **自動マッチング**: 10人（5vs5）のプレイヤーが集まるまで自動でマッチングを行います。
+- **レートシステム**: プレイヤーの実力に基づいたマッチングを提供します（実装予定）。
 
-## Expanding the ESLint configuration
+### 🛡️ ドラフトピック (BAN/PICK)
+- **本格的なドラフト**: 大会ルールに準拠したドラフトモードを搭載。
+- **3 BAN制**: 先行・後攻それぞれのチームが3体ずつ使用禁止ポケモンを選択。
+- **制限時間**: 各BAN/PICKには制限時間があり、スピーディーな進行をサポート。
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### 📊 プレイヤー情報
+- **マイページ**: 自身の対戦成績やレートを確認できます。
+- **ランキング**: レート上位のプレイヤーを表示します。
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 🔄 その他
+- **ロビー共有**: 作成されたロビーIDをゲーム内で共有し、スムーズに試合へ移行できます。
+- **Googleログイン**: Googleアカウントを使用して簡単にログイン・登録が可能です。
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 技術スタック
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Frontend**: React, TypeScript, Vite
+- **Styling**: Tailwind CSS
+- **Backend / Infrastructure**: Firebase (Auth, Firestore, Functions, Hosting)
