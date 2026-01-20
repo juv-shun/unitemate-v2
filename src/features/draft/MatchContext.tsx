@@ -25,7 +25,7 @@ import {
 	unsetLobbyIssue as unsetLobbyIssueFn,
 	unsetSeated as unsetSeatedFn,
 } from "./match";
-import type { DraftSession, Match, MatchResult, Member, Team } from "./types";
+import type { DraftSession, Match, MatchResult, Member, ReportReason, Team } from "./types";
 
 interface MatchContextType {
 	// 状態
@@ -53,7 +53,7 @@ interface MatchContextType {
 	unsetSeated: () => Promise<void>;
 	setLobbyIssue: () => Promise<void>;
 	unsetLobbyIssue: () => Promise<void>;
-	createReport: (reportedUserId: string, screenshotUrl?: string) => Promise<void>;
+	createReport: (reportedUserId: string, reason: ReportReason, reasonDetail?: string, screenshotUrl?: string) => Promise<void>;
 
 	// 計算プロパティ
 	participantCount: number;
@@ -299,7 +299,7 @@ export function MatchProvider({ children }: MatchProviderProps) {
 	}, [user, currentMatchId]);
 
 	const createReport = useCallback(
-		async (reportedUserId: string, screenshotUrl?: string): Promise<void> => {
+		async (reportedUserId: string, reason: ReportReason, reasonDetail?: string, screenshotUrl?: string): Promise<void> => {
 			if (!user || !currentMatchId || !currentMatch)
 				throw new Error("Invalid state");
 			try {
@@ -308,6 +308,8 @@ export function MatchProvider({ children }: MatchProviderProps) {
 					user.uid,
 					reportedUserId,
 					currentMatch.created_at,
+					reason,
+					reasonDetail,
 					screenshotUrl,
 				);
 			} catch (err) {

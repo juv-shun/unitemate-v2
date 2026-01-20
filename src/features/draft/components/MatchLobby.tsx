@@ -5,7 +5,7 @@ import { storage } from "../../../firebase";
 import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../../queue/QueueContext";
 import { useMatch } from "../MatchContext";
-import type { MatchResult, Member } from "../types";
+import type { MatchResult, Member, ReportReason } from "../types";
 
 export function MatchLobby() {
 	const { user } = useAuth();
@@ -32,6 +32,8 @@ export function MatchLobby() {
 	const [showLobbyScreen, setShowLobbyScreen] = useState(false);
 	const [entryError, setEntryError] = useState("");
 	const [reportTarget, setReportTarget] = useState<Member | null>(null);
+	const [reportReason, setReportReason] = useState<ReportReason | "">("");
+	const [reportReasonDetail, setReportReasonDetail] = useState("");
 	const [reportFile, setReportFile] = useState<File | null>(null);
 	const [reportSubmitting, setReportSubmitting] = useState(false);
 	const [reportError, setReportError] = useState("");
@@ -144,12 +146,25 @@ export function MatchLobby() {
 	// 通報
 	const handleReport = (member: Member) => {
 		setReportTarget(member);
+		setReportReason("");
+		setReportReasonDetail("");
 		setReportFile(null);
 		setReportError("");
 	};
 
 	const handleSubmitReport = async () => {
 		if (!reportTarget || !currentMatch || !user) return;
+
+		// バリデーション
+		if (!reportReason) {
+			setReportError("通報理由を選択してください。");
+			return;
+		}
+		if (reportReason === "other" && !reportReasonDetail.trim()) {
+			setReportError("「その他」の場合は詳細を入力してください。");
+			return;
+		}
+
 		setReportSubmitting(true);
 		setReportError("");
 		try {
@@ -161,8 +176,15 @@ export function MatchLobby() {
 				await uploadBytes(storageRef, reportFile);
 				screenshotUrl = await getDownloadURL(storageRef);
 			}
-			await createReport(reportTarget.user_id, screenshotUrl);
+			await createReport(
+				reportTarget.user_id,
+				reportReason,
+				reportReason === "other" ? reportReasonDetail.trim() : undefined,
+				screenshotUrl,
+			);
 			setReportTarget(null);
+			setReportReason("");
+			setReportReasonDetail("");
 			setReportFile(null);
 			alert("通報を送信しました");
 		} catch (err) {
@@ -455,22 +477,74 @@ export function MatchLobby() {
 								color: "var(--color-text-primary)",
 							}}
 						>
-							通報（ゲームに来なかった）
+							通報
 						</h2>
 						<p className="mt-2 text-sm text-slate-300">
 							対象: {reportTarget.display_name || "名無し"}
 						</p>
-						<div
-							className="mt-4 rounded-lg px-3 py-2 text-sm font-semibold"
-							style={{
-								backgroundColor: "rgba(239, 68, 68, 0.12)",
-								color: "#f87171",
-								border: "1px solid rgba(239, 68, 68, 0.35)",
-							}}
-						>
-							この通報は「ゲームに来なかった」場合のみ受け付けます。
-							トロールなどゲーム内行動への対応は一切行いません。
+						{/* 通報理由の選択 */}
+						<div className="mt-4 space-y-2">
+							<label className="block text-sm font-semibold text-slate-200">
+								通報理由（必須）
+							</label>
+							<div className="space-y-2">
+								{[
+									{ value: "no_show", label: "ゲームに来なかった" },
+									{ value: "troll", label: "トロール" },
+									{ value: "other", label: "その他" },
+								].map((option) => (
+									<label
+										key={option.value}
+										className="flex items-center gap-3 rounded-lg border px-3 py-2 text-sm font-semibold cursor-pointer transition-all"
+										style={{
+											borderColor: "rgba(148, 163, 184, 0.2)",
+											color: "var(--color-text-primary)",
+											backgroundColor:
+												reportReason === option.value
+													? "rgba(239, 68, 68, 0.12)"
+													: "rgba(15, 23, 42, 0.35)",
+										}}
+									>
+										<input
+											type="radio"
+											name="report-reason"
+											value={option.value}
+											checked={reportReason === option.value}
+											onChange={() => {
+												setReportReason(option.value as ReportReason);
+												setReportError("");
+											}}
+											className="h-4 w-4 accent-red-400"
+										/>
+										{option.label}
+									</label>
+								))}
+							</div>
 						</div>
+						{/* その他の詳細入力 */}
+						{reportReason === "other" && (
+							<div className="mt-4 space-y-2">
+								<label htmlFor="report-reason-detail" className="block text-sm font-semibold text-slate-200">
+									詳細（必須）
+								</label>
+								<textarea
+									id="report-reason-detail"
+									value={reportReasonDetail}
+									onChange={(e) => {
+										setReportReasonDetail(e.target.value);
+										setReportError("");
+									}}
+									placeholder="通報理由の詳細を入力してください"
+									rows={3}
+									className="block w-full px-3 py-2 rounded-lg text-sm transition-all"
+									style={{
+										backgroundColor: "rgba(15, 23, 42, 0.6)",
+										border: "1px solid rgba(148, 163, 184, 0.3)",
+										color: "var(--color-text-primary)",
+									}}
+								/>
+							</div>
+						)}
 						<div className="mt-4 space-y-2">
 							<label className="block text-sm font-semibold text-slate-200">
 								スクリーンショット（任意）

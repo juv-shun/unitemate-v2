@@ -102,13 +102,17 @@ service cloud.firestore {
         allow read: if request.auth != null
           && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.auth.uid));
 
-        // 作成: マッチ参加者のみ、reason="no_show"、自己通報禁止
+        // 作成: マッチ参加者のみ、自己通報禁止
+        // reason: "no_show", "troll", "other" のいずれか
+        // reason が "other" の場合は reason_detail が必須
         allow create: if request.auth != null
           && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.auth.uid))
           && request.resource.data.reporter_user_id == request.auth.uid
           && request.resource.data.reported_user_id != request.auth.uid
           && exists(/databases/$(database)/documents/matches/$(matchId)/members/$(request.resource.data.reported_user_id))
-          && request.resource.data.reason == "no_show"
+          && request.resource.data.reason in ["no_show", "troll", "other"]
+          && (request.resource.data.reason != "other" ||
+              (request.resource.data.reason_detail is string && request.resource.data.reason_detail.size() > 0))
           && request.resource.data.match_id == matchId
           && request.resource.data.match_created_at is timestamp
           && request.resource.data.reported_at is timestamp;

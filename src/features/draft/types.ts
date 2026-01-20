@@ -96,12 +96,17 @@ export interface CreateMatchInput {
 }
 
 // Report型（通報）
+
+// 通報理由の型
+export type ReportReason = "no_show" | "troll" | "other";
+
 export interface Report {
 	id: string;
 	match_id: string;
 	reporter_user_id: string;
 	reported_user_id: string;
-	reason: "not_seated";
+	reason: ReportReason;
+	reason_detail?: string;
 	match_created_at: Date;
 	reported_at: Date;
 	screenshot_url?: string;

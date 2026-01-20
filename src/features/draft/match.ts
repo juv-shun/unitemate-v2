@@ -17,7 +17,7 @@ import {
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../firebase";
-import type { DraftSession, Match, MatchResult, Member, Team, Turn } from "./types";
+import type { DraftSession, Match, MatchResult, Member, ReportReason, Team, Turn } from "./types";
 
 // =====================================
 // Match CRUD
@@ -813,16 +813,21 @@ export async function createReport(
 	reporterUserId: string,
 	reportedUserId: string,
 	matchCreatedAt: Date,
+	reason: ReportReason,
+	reasonDetail?: string,
 	screenshotUrl?: string,
 ): Promise<string> {
 	const payload: Record<string, unknown> = {
 		match_id: matchId,
 		reporter_user_id: reporterUserId,
 		reported_user_id: reportedUserId,
-		reason: "no_show",
+		reason: reason,
 		match_created_at: Timestamp.fromDate(matchCreatedAt),
 		reported_at: serverTimestamp(),
 	};
+	if (reason === "other" && reasonDetail) {
+		payload.reason_detail = reasonDetail;
+	}
 	if (screenshotUrl) {
 		payload.screenshot_url = screenshotUrl;
 	}
