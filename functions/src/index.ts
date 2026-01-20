@@ -425,7 +425,18 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
     return;
   }
 
-  let remaining = [...candidates].sort((a, b) => b.rating - a.rating);
+  const shuffled = [...candidates];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = shuffled[i];
+    shuffled[i] = shuffled[j];
+    shuffled[j] = temp;
+  }
+
+  const remainder = shuffled.length % 10;
+  let remaining = remainder > 0 ? shuffled.slice(remainder) : shuffled;
+  remaining = remaining.sort((a, b) => b.rating - a.rating);
+
   let created = 0;
 
   while (remaining.length >= 10) {
@@ -448,7 +459,7 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   if (created === 0) {
     console.log("no matches created");
   }
-});
+});;
 
 export const runMatchmakingManual = onRequest(async (req, res) => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
