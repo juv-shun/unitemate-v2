@@ -68,7 +68,7 @@ export function GameRules() {
 					textShadow: "0 0 10px rgba(6, 182, 212, 0.3)",
 				}}
 			>
-				Match Regulations
+				Regulations
 			</h2>
 
 			{/* Rules list */}
