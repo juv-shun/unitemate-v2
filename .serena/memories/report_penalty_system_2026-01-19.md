@@ -11,16 +11,21 @@
 ### 通報機能
 - **トリガー**: マッチ参加者が「REPORT」ボタンをクリック
 - **対象**: 同一マッチ内の他の参加者
-- **理由**: `"no_show"`（未参加・ノーショー）
+- **理由**（2026-01-21更新）:
+  - `"no_show"`: ゲームに来なかった
+  - `"troll"`: トロール
+  - `"other"`: その他（詳細テキスト必須）
 - **保存先**: `matches/{matchId}/reports`サブコレクション
 - **制約**:
   - 自己通報禁止
   - マッチ参加者のみ通報可能
   - 被通報者もマッチ参加者である必要あり
+  - `"other"`選択時は`reason_detail`が必須
 
 ### ペナルティシステム
 - **条件**: 同一マッチ内で異なる通報者から3件の通報
-- **内容**: 3時間のインキュー制限
+  - **理由に関係なく**すべての通報種別（`no_show`, `troll`, `other`）でカウント（2026-01-21更新）
+- **内容**: 1時間のインキュー制限
 - **適用**: Firebase Functionsで自動付与
 - **冪等性**: 同一マッチに対する重複ペナルティ防止
 - **記録**: `users/{userId}/penalties`サブコレクションに履歴保存
@@ -56,7 +61,8 @@
 | `match_id` | string | マッチID |
 | `reporter_user_id` | string | 通報者ユーザーID |
 | `reported_user_id` | string | 被通報者ユーザーID |
-| `reason` | string | "no_show" |
+| `reason` | "no_show" \| "troll" \| "other" | 通報理由（2026-01-21拡張） |
+| `reason_detail` | string \| undefined | `reason="other"`の場合の詳細テキスト（2026-01-21追加） |
 | `match_created_at` | timestamp | マッチ作成日時 |
 | `reported_at` | timestamp | 通報日時 |
 | `screenshot_url` | string \| undefined | スクリーンショットURL（任意） |
@@ -80,10 +86,23 @@
       3. `penalties`サブコレクションに履歴追加
 
 ### フロントエンド
+- **src/features/draft/types.ts** (2026-01-21追加)
+  - `ReportReason`型を追加: `"no_show" | "troll" | "other"`
+  - `Report`インターフェースに`reason_detail?: string`を追加
+
 - **src/features/draft/match.ts**
-  - `createReport()`: 通報作成関数
-    - 保存先を`matches/{matchId}/reports`に変更
-    - `reason`を`"no_show"`に変更
+  - `createReport(matchId, reporterUserId, reportedUserId, matchCreatedAt, reason, reasonDetail?, screenshotUrl?)`: 通報作成関数（2026-01-21更新）
+    - 保存先: `matches/{matchId}/reports`
+    - `reason`引数で通報理由を指定（`"no_show"`, `"troll"`, `"other"`）
+    - `reason="other"`の場合のみ`reason_detail`を保存
+
+- **src/features/draft/MatchContext.tsx** (2026-01-21更新)
+  - `createReport`関数のシグネチャを更新: `(reportedUserId, reason, reasonDetail?, screenshotUrl?)`
+
+- **src/features/draft/components/MatchLobby.tsx** (2026-01-21更新)
+  - 通報モーダルに理由選択UI（ラジオボタン）を追加
+  - 「その他」選択時のテキスト入力フィールドを追加
+  - バリデーション: 理由必須、`other`選択時はテキスト必須
 
 - **src/features/queue/queue.ts**
   - `QueueData`型に`bannedUntil: Date | null`を追加
@@ -106,7 +125,10 @@
   - `users.banned_until`をクライアントから変更禁止に設定
   - `users/{userId}/penalties`サブコレクション追加（読み取り: 本人のみ、作成・更新・削除: バックエンドのみ）
   - ルートレベルの`reports`コレクション削除
-  - `matches/{matchId}/reports`サブコレクション追加（マッチ参加者のみアクセス可能）
+  - `matches/{matchId}/reports`サブコレクション追加（2026-01-21更新）:
+    - マッチ参加者のみアクセス可能
+    - `reason`は`["no_show", "troll", "other"]`のみ許可
+    - `reason="other"`の場合は`reason_detail`が必須（空文字列不可）
 
 ## 処理フロー
 
@@ -164,9 +186,13 @@
 - ✅ ペナルティ中のUIが正しく表示される
 - ✅ 冪等性が確保され、重複ペナルティが発生しない
 
+## 更新履歴
+- **2026-01-19**: 初回実装（`no_show`のみ、3時間ペナルティ）
+- **2026-01-21**: 通報理由を拡張（`no_show`, `troll`, `other`）、全理由でペナルティ対象
+
 ## 今後の拡張案
 - ペナルティ履歴の表示（マイページ等）
 - 通報の取り消し機能
 - 管理者による手動ペナルティ解除
-- 繰り返し違反者への累進的ペナルティ（3時間 → 6時間 → 24時間等）
-- 通報理由の多様化（暴言、不正行為等）
+- 繰り返し違反者への累進的ペナルティ（1時間 → 3時間 → 6時間 → 24時間等）
+- 通報理由ごとのペナルティ重み付け（例: `troll`は1回で重いペナルティ）
