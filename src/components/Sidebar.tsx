@@ -182,7 +182,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             color: "var(--color-accent-cyan)",
           }}
         >
-          UNITEMATE
+          V-ARENA
         </h1>
       </div>
 
