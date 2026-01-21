@@ -299,7 +299,7 @@ export function QueueSection() {
             className="text-xs"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            平日 02:00〜17:00 はマッチングを受け付けていません
+            20:00〜23:00 以外はマッチングを受け付けていません
           </p>
         </div>
       )}
@@ -353,7 +353,7 @@ export function QueueSection() {
             </span>
           </button>
           <p className="text-xs text-slate-400 text-center">
-            平日 02:00〜17:00 は受付時間外
+            開催時間: 20:00〜23:00
           </p>
         </div>
       )}
