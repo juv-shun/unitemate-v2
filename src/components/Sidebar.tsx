@@ -147,6 +147,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
   };
 
   const handleLogout = async () => {
+    if (!window.confirm("ログアウトしますか？")) return;
     await logout();
     navigate("/");
     onNavigate?.();
