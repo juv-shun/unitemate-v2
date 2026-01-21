@@ -18,11 +18,13 @@ import {
 	leaveMatch as leaveMatchFn,
 	setLobbyId as setLobbyIdFn,
 	setLobbyIssue as setLobbyIssueFn,
+	setLobbyCreating as setLobbyCreatingFn,
 	setSeated as setSeatedFn,
 	subscribeToDraftSession,
 	subscribeToMatch,
 	subscribeToMembers,
 	unsetLobbyIssue as unsetLobbyIssueFn,
+	unsetLobbyCreating as unsetLobbyCreatingFn,
 	unsetSeated as unsetSeatedFn,
 } from "./match";
 import type { DraftSession, Match, MatchResult, Member, ReportReason, Team } from "./types";
@@ -53,6 +55,8 @@ interface MatchContextType {
 	unsetSeated: () => Promise<void>;
 	setLobbyIssue: () => Promise<void>;
 	unsetLobbyIssue: () => Promise<void>;
+	setLobbyCreating: () => Promise<void>;
+	unsetLobbyCreating: () => Promise<void>;
 	createReport: (reportedUserId: string, reason: ReportReason, reasonDetail?: string, screenshotUrl?: string) => Promise<void>;
 
 	// 計算プロパティ
@@ -298,6 +302,30 @@ export function MatchProvider({ children }: MatchProviderProps) {
 		}
 	}, [user, currentMatchId]);
 
+	const setLobbyCreating = useCallback(async (): Promise<void> => {
+		if (!user || !currentMatchId) throw new Error("User not authenticated");
+		try {
+			await setLobbyCreatingFn(currentMatchId, user.uid);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to set lobby creating";
+			setError(errorMessage);
+			throw err;
+		}
+	}, [user, currentMatchId]);
+
+	const unsetLobbyCreating = useCallback(async (): Promise<void> => {
+		if (!user || !currentMatchId) throw new Error("User not authenticated");
+		try {
+			await unsetLobbyCreatingFn(currentMatchId, user.uid);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to unset lobby creating";
+			setError(errorMessage);
+			throw err;
+		}
+	}, [user, currentMatchId]);
+
 	const createReport = useCallback(
 		async (reportedUserId: string, reason: ReportReason, reasonDetail?: string, screenshotUrl?: string): Promise<void> => {
 			if (!user || !currentMatchId || !currentMatch)
@@ -388,6 +416,8 @@ export function MatchProvider({ children }: MatchProviderProps) {
 				unsetSeated,
 				setLobbyIssue,
 				unsetLobbyIssue,
+				setLobbyCreating,
+				unsetLobbyCreating,
 				createReport,
 				participantCount,
 				isParticipant,

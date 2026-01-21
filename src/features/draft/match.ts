@@ -328,6 +328,8 @@ export async function getMembers(matchId: string): Promise<Member[]> {
 		seated_at: doc.data().seated_at?.toDate() ?? null,
 		lobby_issue: doc.data().lobby_issue,
 		lobby_issue_at: doc.data().lobby_issue_at?.toDate() ?? null,
+		lobby_creating: doc.data().lobby_creating,
+		lobby_creating_at: doc.data().lobby_creating_at?.toDate() ?? null,
 		match_result: doc.data().match_result ?? null,
 		match_left_at: doc.data().match_left_at?.toDate() ?? null,
 	}));
@@ -666,12 +668,14 @@ export function subscribeToMembers(
 							team: memberData.team,
 							seat_no: memberData.seat_no,
 							joined_at: memberData.joined_at?.toDate(),
-							seated_at: memberData.seated_at?.toDate() ?? null,
-							lobby_issue: memberData.lobby_issue,
-							lobby_issue_at: memberData.lobby_issue_at?.toDate() ?? null,
-							display_name: userData?.display_name,
-							photo_url: userData?.photo_url,
-						};
+					seated_at: memberData.seated_at?.toDate() ?? null,
+					lobby_issue: memberData.lobby_issue,
+					lobby_issue_at: memberData.lobby_issue_at?.toDate() ?? null,
+					lobby_creating: memberData.lobby_creating,
+					lobby_creating_at: memberData.lobby_creating_at?.toDate() ?? null,
+					display_name: userData?.display_name,
+					photo_url: userData?.photo_url,
+				};
 					}),
 				);
 
@@ -802,6 +806,20 @@ export async function unsetLobbyIssue(matchId: string, userId: string): Promise<
 	await updateDoc(doc(db, "matches", matchId, "members", userId), {
 		lobby_issue: false,
 		lobby_issue_at: null,
+	});
+}
+
+export async function setLobbyCreating(matchId: string, userId: string): Promise<void> {
+	await updateDoc(doc(db, "matches", matchId, "members", userId), {
+		lobby_creating: true,
+		lobby_creating_at: serverTimestamp(),
+	});
+}
+
+export async function unsetLobbyCreating(matchId: string, userId: string): Promise<void> {
+	await updateDoc(doc(db, "matches", matchId, "members", userId), {
+		lobby_creating: false,
+		lobby_creating_at: null,
 	});
 }
 

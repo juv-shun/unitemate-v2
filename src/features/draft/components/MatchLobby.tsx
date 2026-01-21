@@ -20,6 +20,8 @@ export function MatchLobby() {
 		setSeated,
 		setLobbyIssue,
 		unsetLobbyIssue,
+		setLobbyCreating,
+		unsetLobbyCreating,
 		createReport,
 		leaveMatch,
 		loading,
@@ -143,6 +145,24 @@ export function MatchLobby() {
 		}
 	};
 
+	// ロビー作成中設定
+	const handleSetLobbyCreating = async () => {
+		try {
+			await setLobbyCreating();
+		} catch (err) {
+			console.error("Failed to set lobby creating:", err);
+		}
+	};
+
+	// ロビー作成中解除
+	const handleUnsetLobbyCreating = async () => {
+		try {
+			await unsetLobbyCreating();
+		} catch (err) {
+			console.error("Failed to unset lobby creating:", err);
+		}
+	};
+
 	// 通報
 	const handleReport = (member: Member) => {
 		setReportTarget(member);
@@ -238,6 +258,7 @@ export function MatchLobby() {
 
 	const isSeated = myMember?.seated_at != null;
 	const hasLobbyIssue = myMember?.lobby_issue === true;
+	const hasLobbyCreating = myMember?.lobby_creating === true;
 	const shouldShowModal = !showLobbyScreen && !isSeated;
 
 	return (
@@ -963,6 +984,36 @@ export function MatchLobby() {
 							</div>
 						)}
 						<div className="flex flex-wrap gap-3 relative z-10">
+							{hasLobbyCreating ? (
+								<button
+									type="button"
+									onClick={handleUnsetLobbyCreating}
+									className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
+									style={{
+										backgroundColor: "rgba(100, 116, 139, 0.3)",
+										color: "var(--color-text-primary)",
+										border: "1px solid rgba(100, 116, 139, 0.5)",
+										fontFamily: "var(--font-display)",
+									}}
+								>
+									ロビー作成中を解除
+								</button>
+							) : (
+								<button
+									type="button"
+									onClick={handleSetLobbyCreating}
+									className="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
+									style={{
+										backgroundColor: "rgba(56, 189, 248, 0.2)",
+										color: "#38bdf8",
+										border: "1px solid rgba(56, 189, 248, 0.4)",
+										fontFamily: "var(--font-display)",
+										boxShadow: "0 0 16px rgba(56, 189, 248, 0.25)",
+									}}
+								>
+									私がロビー作成します
+								</button>
+							)}
 							{hasLobbyIssue ? (
 								<button
 									type="button"
@@ -1154,6 +1205,7 @@ function TeamDisplay({
 				{members.map((member, i) => {
 					const isSeated = member.seated_at != null;
 					const hasIssue = member.lobby_issue === true;
+					const hasCreating = member.lobby_creating === true;
 					const isCurrentUser = member.user_id === currentUserId;
 
 					return (
@@ -1192,6 +1244,18 @@ function TeamDisplay({
 										}}
 									>
 										✓
+									</span>
+								)}
+								{hasCreating && (
+									<span
+										className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded animate-pulse"
+										style={{
+											backgroundColor: "rgba(56, 189, 248, 0.2)",
+											color: "#38bdf8",
+											border: "1px solid rgba(56, 189, 248, 0.3)",
+										}}
+									>
+										ロビー作成中
 									</span>
 								)}
 								{hasIssue && (

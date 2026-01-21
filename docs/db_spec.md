@@ -114,6 +114,8 @@ waiting -> lobby_pending -> completed
 | seated_at | timestamp \| null | 着席時刻（未着席はnull） |
 | lobby_issue | boolean | 困り中フラグ |
 | lobby_issue_at | timestamp \| null | 困り中設定時刻 |
+| lobby_creating | boolean | ロビー作成中フラグ |
+| lobby_creating_at | timestamp \| null | ロビー作成中設定時刻 |
 | match_result | string \| null | 試合結果（win / loss / invalid、未入力はnull） |
 | match_left_at | timestamp \| null | 退席時刻（未入力はnull） |
 

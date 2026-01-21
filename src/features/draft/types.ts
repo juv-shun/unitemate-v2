@@ -48,6 +48,8 @@ export interface Member {
 	seated_at?: Date | null; // 着席時刻（nullは未着席）
 	lobby_issue?: boolean; // 困り中フラグ
 	lobby_issue_at?: Date | null; // 困り中設定時刻
+	lobby_creating?: boolean; // ロビー作成中フラグ
+	lobby_creating_at?: Date | null; // ロビー作成中設定時刻
 	match_result?: MatchResult | null; // 試合結果（未入力はnull）
 	match_left_at?: Date | null; // 退席時刻（未入力はnull）
 	// 表示用（usersコレクションからjoin）
