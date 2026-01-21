@@ -1081,13 +1081,14 @@ export function MatchLobby() {
 							onClick={handleOpenEndMatchModal}
 							className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
 							style={{
-								backgroundColor: "rgba(239, 68, 68, 0.15)",
+								backgroundColor: "rgba(239, 68, 68, 0.25)",
 								color: "var(--color-danger)",
-								border: "1px solid rgba(239, 68, 68, 0.35)",
+								border: "1px solid rgba(239, 68, 68, 0.45)",
 								fontFamily: "var(--font-display)",
+								boxShadow: "0 0 16px rgba(239, 68, 68, 0.25)",
 							}}
 						>
-							試合終了
+							試合終了 / 退出
 						</button>
 					</div>
 				</>
