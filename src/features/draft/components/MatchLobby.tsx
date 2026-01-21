@@ -983,7 +983,16 @@ export function MatchLobby() {
 								⚠ {lobbyIdError}
 							</div>
 						)}
-						<div className="flex flex-wrap gap-3 relative z-10">
+						<div className="flex flex-wrap items-center gap-3 relative z-10">
+							<span
+								className="text-xs font-bold uppercase tracking-wide"
+								style={{
+									color: "var(--color-text-secondary)",
+									fontFamily: "var(--font-display)",
+								}}
+							>
+								メンバーへの連絡：
+							</span>
 							{hasLobbyCreating ? (
 								<button
 									type="button"
@@ -1070,7 +1079,7 @@ export function MatchLobby() {
 						<button
 							type="button"
 							onClick={handleOpenEndMatchModal}
-							className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-[1.01] active:scale-[0.99]"
+							className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all duration-300 hover:scale-105 active:scale-95"
 							style={{
 								backgroundColor: "rgba(239, 68, 68, 0.15)",
 								color: "var(--color-danger)",
