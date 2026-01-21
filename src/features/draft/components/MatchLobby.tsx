@@ -1026,7 +1026,7 @@ export function MatchLobby() {
 										fontFamily: "var(--font-display)",
 									}}
 								>
-									困り中を解除
+									ロビーに入れないを解除
 								</button>
 							) : (
 								<button
@@ -1054,7 +1054,7 @@ export function MatchLobby() {
 							members={firstTeamMembers}
 							currentUserId={user?.uid}
 							onReport={handleReport}
-							accentColor="var(--color-accent-cyan)"
+							accentColor="#8b5cf6"
 							index={0}
 						/>
 						<TeamDisplay
@@ -1062,7 +1062,7 @@ export function MatchLobby() {
 							members={secondTeamMembers}
 							currentUserId={user?.uid}
 							onReport={handleReport}
-							accentColor="var(--color-accent-pink)"
+							accentColor="#f97316"
 							index={1}
 						/>
 					</div>
