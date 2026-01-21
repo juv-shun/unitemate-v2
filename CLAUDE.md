@@ -35,6 +35,14 @@
 
 ### Firebase設定
 
+#### Firebase 環境の調査
+
+Firebase のデプロイ状態（Functions、Firestore のデータ、セキュリティルールなど）を確認する際は、`firebase-inspector` サブエージェントを使用してください。
+
+```
+Task(subagent_type: "firebase-inspector", prompt: "調査内容", description: "Firebase inspection")
+```
+
 #### エミュレータ使用
 - 開発環境では、Auth/Firestoreエミュレータに自動接続
 - `firebase.ts`で環境変数`NODE_ENV`を確認し、エミュレータの有無を判定
