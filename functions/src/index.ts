@@ -459,7 +459,7 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   if (created === 0) {
     console.log("no matches created");
   }
-});;
+});
 
 export const runMatchmakingManual = onRequest(async (req, res) => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
@@ -750,7 +750,7 @@ const applyPenalty = async (
     return;
   }
 
-  const penaltyDurationHours = 1;
+  const penaltyDurationHours = 0.5;
   const penaltyEndTime = Timestamp.fromMillis(
     Date.now() + penaltyDurationHours * 60 * 60 * 1000,
   );

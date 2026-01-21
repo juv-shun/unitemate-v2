@@ -20,8 +20,7 @@ const faqItems: FaqItem[] = [
     delay: 0.1,
   },
   {
-    question:
-      "マッチングアルゴリズムを教えて下さい。",
+    question: "マッチングアルゴリズムを教えて下さい。",
     answer:
       "1分に1回定期バッチが動いており、起動されたタイミングでキューに30人以上、もしくは1分以上待機しているユーザーがいれば、マッチングが行われます。",
     delay: 0.2,
@@ -36,7 +35,7 @@ const faqItems: FaqItem[] = [
   {
     question: "試合に来なかったプレイヤーを通報しました。どうなるんですか？",
     answer:
-      "同じゲームに参加していた複数のプレイヤーから通報が確認されると、システム側で自動的に、60分間マッチングできないペナルティが付与されます。\nスクリーンショットを添付できますが、将来的な対応のためにある機能であり、現状では、運用コストを下げるため、人手による確認はしていません。",
+      "同じゲームに参加していた複数のプレイヤーから通報が確認されると、システム側で自動的に、一定時間マッチングできないペナルティが付与されます。\nスクリーンショットを添付できますが、将来的な対応のためにある機能であり、現状では、運用コストを下げるため、人手による確認はしていません。",
     delay: 0.4,
   },
   {
@@ -227,7 +226,9 @@ export function FaqPage() {
                       <div
                         className="flex-shrink-0 w-6 h-6 flex items-center justify-center transition-transform duration-300 mt-1.5"
                         style={{
-                          transform: isExpanded ? "rotate(180deg)" : "rotate(0)",
+                          transform: isExpanded
+                            ? "rotate(180deg)"
+                            : "rotate(0)",
                           color: "var(--color-accent-cyan)",
                         }}
                       >
