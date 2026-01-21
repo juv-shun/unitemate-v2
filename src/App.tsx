@@ -7,6 +7,7 @@ import { DraftSimulationPage } from "./features/draft/DraftSimulationPage";
 import { MatchProvider } from "./features/draft/MatchContext";
 import { FaqPage } from "./features/faq/FaqPage";
 import { MatchResultPage } from "./features/match/MatchResultPage";
+import { MonitorPage } from "./features/monitor/MonitorPage";
 import { MyPage } from "./features/mypage/MyPage";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
@@ -77,6 +78,7 @@ function App() {
                   </Layout>
                 }
               />
+              <Route path="/monitor" element={<MonitorPage />} />
             </Routes>
           </MatchProvider>
         </QueueProvider>
