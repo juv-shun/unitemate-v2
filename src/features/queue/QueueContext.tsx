@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { playMatchSound } from "./matchSound";
 import {
   cancelQueue as cancelQueueFn,
   isQueueClosedAt,
@@ -72,6 +73,7 @@ export function QueueProvider({ children }: QueueProviderProps) {
   }, [user]);
 
   const prevQueueStatus = useRef(queueStatus);
+  const lastPlayedMatchId = useRef<string | null>(null);
 
   useEffect(() => {
     const justMatched =
@@ -81,7 +83,16 @@ export function QueueProvider({ children }: QueueProviderProps) {
     // Update ref for next render
     prevQueueStatus.current = queueStatus;
 
-    if (queueStatus !== "matched" || !matchedMatchId) return;
+    if (queueStatus !== "matched") {
+      lastPlayedMatchId.current = null;
+      return;
+    }
+    if (!matchedMatchId) return;
+
+    if (justMatched && lastPlayedMatchId.current !== matchedMatchId) {
+      lastPlayedMatchId.current = matchedMatchId;
+      void playMatchSound();
+    }
 
     if (justMatched || isHomePage) {
       const targetPath = `/lobby/${matchedMatchId}`;

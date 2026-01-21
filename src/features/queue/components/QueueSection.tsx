@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useQueue } from "../QueueContext";
+import { unlockMatchSound } from "../matchSound";
 import { isQueueClosedAt } from "../queue";
 import { SearchingIndicator } from "./SearchingIndicator";
 
@@ -69,6 +70,7 @@ export function QueueSection() {
   const handleStartQueue = async () => {
     setIsProcessing(true);
     try {
+      void unlockMatchSound();
       await startQueue();
     } finally {
       setIsProcessing(false);
