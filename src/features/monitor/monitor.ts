@@ -72,7 +72,7 @@ export async function fetchActiveMatches(): Promise<ActiveMatch[]> {
   const matchesQuery = query(
     collection(db, "matches"),
     where("status", "==", "lobby_pending"),
-    orderBy("created_at", "desc")
+    orderBy("created_at", "asc")
   );
 
   const matchesSnapshot = await getDocs(matchesQuery);
