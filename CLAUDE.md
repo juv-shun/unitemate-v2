@@ -43,6 +43,22 @@
 - Firestoreへのデータ保存時は、**必ず**`serverTimestamp()`を使用
 - `created_at`, `updated_at`, `joined_at`, `queue_joined_at`などのタイムスタンプフィールドに適用
 
+#### Callable Functions の Cloud Run IAM 設定（重要）
+
+新しい **Callable Function（`onCall`）** を追加した場合、本番環境で動作させるには **Cloud Run の IAM 設定を手動で変更する必要があります**。
+
+**背景**: Cloud Functions v2 (2nd gen) の Callable Functions は、デフォルトで Cloud Run の IAM 認証が有効になっています。Firebase Auth のトークンは Cloud IAM とは別物のため、「公開アクセスを許可」に設定しないとクライアントからの呼び出しが拒否されます。
+
+**設定手順**:
+1. [Google Cloud Console - Cloud Run](https://console.cloud.google.com/run?project=unitemate-v2) にアクセス
+2. 対象の Callable Function（例: `setseated`）を選択
+3. 「セキュリティ」タブで「認証」を「**公開アクセスを許可する**」に変更
+4. 保存
+
+**対象となる関数**: クライアント（ブラウザ）から `httpsCallable` で呼び出す関数のみ。スケジュール実行（`onSchedule`）やFirestoreトリガー（`onDocumentCreated`）は対象外。
+
+**セキュリティについて**: 関数内部で `request.auth` をチェックしているため、Firebase Auth でログインしていないユーザーは引き続き拒否されます。「公開アクセス」は Cloud Run レベルの認証をスキップするだけで、アプリケーションレベルのセキュリティは維持されています。
+
 
 ## アーキテクチャとパターン
 
