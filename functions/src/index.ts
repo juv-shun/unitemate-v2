@@ -329,7 +329,7 @@ const updateUserStats = async ({
       transaction.set(
         userRefs[index],
         {
-          total_matches: totalMatches + 1,
+          total_matches: totalMatches + (outcome !== "invalid" ? 1 : 0),
           total_wins: totalWins + (outcome === "win" ? 1 : 0),
           rating: currentRating + ratingDelta,
           recent_results: nextResults,
