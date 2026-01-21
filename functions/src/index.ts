@@ -512,7 +512,7 @@ export const runMatchmakingManual = onRequest(async (req, res) => {
  * ロビーID設定（参加者チェック付き）
  */
 export const setMatchLobbyId = onCall(
-  { region: "asia-northeast1" },
+  { region: "asia-northeast1", invoker: "public" },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "認証が必要です");
@@ -577,7 +577,7 @@ export const setMatchLobbyId = onCall(
  * 着席設定
  */
 export const setSeated = onCall(
-  { region: "asia-northeast1" },
+  { region: "asia-northeast1", invoker: "public" },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "認証が必要です");
@@ -610,7 +610,7 @@ export const setSeated = onCall(
  * 着席解除
  */
 export const unsetSeated = onCall(
-  { region: "asia-northeast1" },
+  { region: "asia-northeast1", invoker: "public" },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "認証が必要です");
@@ -641,7 +641,7 @@ export const unsetSeated = onCall(
  * 試合結果の報告（即時確定を試行）
  */
 export const submitMatchResult = onCall(
-  { region: "asia-northeast1" },
+  { region: "asia-northeast1", invoker: "public" },
   async (request) => {
     if (!request.auth) {
       throw new HttpsError("unauthenticated", "認証が必要です");

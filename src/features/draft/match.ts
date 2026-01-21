@@ -16,7 +16,7 @@ import {
 	where,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
-import { db, functions } from "../../firebase";
+import { auth, db, functions } from "../../firebase";
 import type { DraftSession, Match, MatchResult, Member, ReportReason, Team, Turn } from "./types";
 
 // =====================================
@@ -767,6 +767,20 @@ export async function setLobbyId(
 export async function setSeated(
 	matchId: string,
 ): Promise<{ success: boolean }> {
+	// 認証状態を確認
+	const currentUser = auth.currentUser;
+	if (!currentUser) {
+		throw new Error("認証されていません。ログインしてください。");
+	}
+
+	// 認証トークンを取得して確認
+	try {
+		await currentUser.getIdToken(true); // トークンをリフレッシュ
+	} catch (error) {
+		console.error("Failed to get ID token:", error);
+		throw new Error("認証トークンの取得に失敗しました。再度ログインしてください。");
+	}
+
 	const fn = httpsCallable<
 		{ matchId: string },
 		{ success: boolean }
