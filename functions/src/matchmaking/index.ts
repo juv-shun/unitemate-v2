@@ -1,9 +1,9 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { onRequest } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { db } from "../lib/db";
-import type { Assignment, QueueUser } from "../lib/types";
-import { getEnvInt } from "../lib/utils";
+import { db } from "../lib/db.js";
+import type { Assignment, QueueUser } from "../lib/types.js";
+import { getEnvInt } from "../lib/utils.js";
 
 const DEFAULT_RATING = 1600;
 
@@ -107,7 +107,9 @@ const commitMatch = async (
   });
 };
 
-export const runMatchmaking = onSchedule("every 1 minutes", async () => {
+export const runMatchmaking = onSchedule(
+  { schedule: "every 1 minutes", region: "asia-northeast1" },
+  async () => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
   const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
   const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 200);
@@ -175,7 +177,9 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
   }
 });
 
-export const runMatchmakingManual = onRequest(async (req, res) => {
+export const runMatchmakingManual = onRequest(
+  { region: "asia-northeast1" },
+  async (req, res) => {
   const minQueue = getEnvInt("MATCHING_MIN_QUEUE", 30);
   const maxWaitSec = getEnvInt("MATCHING_MAX_WAIT_SEC", 60);
   const candidateLimit = getEnvInt("MATCHING_CANDIDATE_LIMIT", 200);
@@ -228,6 +232,7 @@ export const resetQueueAtClose = onSchedule(
   {
     schedule: "0 23 * * *",
     timeZone: "Asia/Tokyo",
+    region: "asia-northeast1",
     memory: "256MiB",
   },
   async () => {

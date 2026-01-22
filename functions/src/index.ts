@@ -1,5 +1,5 @@
 // db.tsで初期化されるため、最初にインポート
-import "./lib/db";
+import "./lib/db.js";
 
 import { setGlobalOptions } from "firebase-functions/v2/options";
 
@@ -10,7 +10,7 @@ export {
   runMatchmaking,
   runMatchmakingManual,
   resetQueueAtClose,
-} from "./matchmaking";
-export { setMatchLobbyId, setSeated, unsetSeated } from "./lobby";
-export { submitMatchResult, finalizeMatchesByTimeout } from "./result";
-export { onReportCreated } from "./report";
+} from "./matchmaking/index.js";
+export { setMatchLobbyId, setSeated, unsetSeated } from "./lobby/index.js";
+export { submitMatchResult, finalizeMatchesByTimeout } from "./result/index.js";
+export { onReportCreated } from "./report/index.js";

@@ -1,13 +1,13 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import { db } from "../lib/db";
+import { db } from "../lib/db.js";
 import type {
   FinalResult,
   FinalizeReason,
   MatchMember,
   MatchResult,
-} from "../lib/types";
+} from "../lib/types.js";
 
 const DEFAULT_RATING = 1600;
 const K_FACTOR = 32;
@@ -335,7 +335,7 @@ export const submitMatchResult = onCall(
  * 結果確定タイムアウト処理（40分）
  */
 export const finalizeMatchesByTimeout = onSchedule(
-  "every 1 minutes",
+  { schedule: "every 1 minutes", region: "asia-northeast1" },
   async () => {
     const cutoff = Timestamp.fromMillis(Date.now() - 40 * 60 * 1000);
     const matchesSnap = await db

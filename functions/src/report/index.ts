@@ -1,6 +1,6 @@
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
-import { db } from "../lib/db";
+import { db } from "../lib/db.js";
 
 /**
  * ペナルティ付与処理
@@ -78,7 +78,7 @@ const applyPenalty = async (
  * 通報作成トリガー（3件で自動ペナルティ付与）
  */
 export const onReportCreated = onDocumentCreated(
-  "matches/{matchId}/reports/{reportId}",
+  { document: "matches/{matchId}/reports/{reportId}", region: "asia-northeast1" },
   async (event) => {
     const matchId = event.params.matchId;
     const reportData = event.data?.data();

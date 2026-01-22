@@ -1,6 +1,6 @@
 import { FieldValue } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
-import { db } from "../lib/db";
+import { db } from "../lib/db.js";
 
 /**
  * ロビーID設定（参加者チェック付き）
