@@ -6,7 +6,12 @@ unitemate-v2/
 ├── src/                    # フロントエンドソースコード
 ├── functions/              # Firebase Functions（バックエンド）
 │   └── src/
-│       └── index.ts        # マッチング処理（フェーズ1.3実装）
+│       ├── index.ts        # エントリポイント
+│       ├── lib/            # 共通モジュール（db, types, utils）
+│       ├── matchmaking/    # マッチメイキング関連
+│       ├── lobby/          # ロビー・座席関連
+│       ├── result/         # 試合結果・確定関連
+│       └── report/         # 通報・ペナルティ関連
 ├── public/                 # 静的ファイル
 ├── docs/                   # ドキュメント（要件定義書等）
 ├── dist/                   # ビルド出力（gitignore対象）
@@ -152,23 +157,57 @@ src/
 - 開発環境ではエミュレータに接続
 
 ### Firebase Functions（バックエンド）
-- `functions/src/index.ts`: Cloud Functions実装
-  - **runMatchmaking**: 1分間隔の定期実行関数
-    - 待機ユーザーから10人抽選してマッチ作成
-    - トランザクションで競合回避
-  - **runMatchmakingManual**: 手動実行用HTTP関数（開発・テスト用）
-  - **onReportCreated**: 通報作成トリガー（通報機能）
-    - `matches/{matchId}/reports`作成時に実行
-    - 同一マッチ・同一被通報者の通報を集計
-    - 異なる通報者から3件で自動ペナルティ付与
-  - **applyPenalty**: ペナルティ付与ヘルパー関数
-    - 3時間のインキュー制限を付与
-    - `users.banned_until`更新と`penalties`サブコレクション作成
-    - 冪等性確保（同一マッチへの重複ペナルティ防止）
-  - 環境変数:
-    - `MATCHING_MIN_QUEUE`: 最小キュー人数（デフォルト: 30）
-    - `MATCHING_MAX_WAIT_SEC`: 最大待機時間秒（デフォルト: 180）
-    - `MATCHING_CANDIDATE_LIMIT`: 候補取得上限（デフォルト: 50）
+```
+functions/src/
+├── index.ts              # エントリポイント（全関数をre-export）
+├── lib/
+│   ├── db.ts             # Firebase初期化 + Firestoreインスタンス
+│   ├── types.ts          # 共通型定義（QueueUser, Assignment, MatchMember等）
+│   └── utils.ts          # 共通ユーティリティ（getEnvInt）
+├── matchmaking/
+│   └── index.ts          # マッチメイキング関連
+├── lobby/
+│   └── index.ts          # ロビー・座席関連
+├── result/
+│   └── index.ts          # 試合結果・確定関連
+└── report/
+    └── index.ts          # 通報・ペナルティ関連
+```
+
+#### matchmaking/index.ts
+- **runMatchmaking**: 1分間隔の定期実行関数
+  - 待機ユーザーから10人抽選してマッチ作成
+  - 最古の10人を保護、残りをシャッフル
+  - トランザクションで競合回避
+- **runMatchmakingManual**: 手動実行用HTTP関数（開発・テスト用）
+- 内部関数: `shouldRunMatching`, `buildAssignments`, `commitMatch`
+
+#### lobby/index.ts
+- **setMatchLobbyId**: ロビーID設定（Callable）
+- **setSeated**: 着席設定（Callable）
+- **unsetSeated**: 着席解除（Callable）
+
+#### result/index.ts
+- **submitMatchResult**: 試合結果報告（Callable）
+  - 7票以上で即時確定
+- **finalizeMatchesByTimeout**: タイムアウト確定（1分間隔スケジュール）
+  - 40分経過したマッチを強制確定
+- 内部関数: `tallyMatchResults`, `decideFinalResult`, `finalizeMatch`, `updateUserStats`, `computeRatingDeltas`
+
+#### report/index.ts
+- **onReportCreated**: 通報作成トリガー（Firestoreトリガー）
+  - `matches/{matchId}/reports`作成時に実行
+  - 同一マッチ・同一被通報者の通報を集計
+  - 異なる通報者から3件で自動ペナルティ付与
+- **applyPenalty**: ペナルティ付与ヘルパー関数
+  - 30分のインキュー制限を付与
+  - `users.banned_until`更新と`penalties`サブコレクション作成
+  - 冪等性確保（同一マッチへの重複ペナルティ防止）
+
+#### 環境変数
+- `MATCHING_MIN_QUEUE`: 最小キュー人数（デフォルト: 30）
+- `MATCHING_MAX_WAIT_SEC`: 最大待機時間秒（デフォルト: 60）
+- `MATCHING_CANDIDATE_LIMIT`: 候補取得上限（デフォルト: 200）
 
 ### スタイリング
 - `src/index.css`: グローバルスタイル
