@@ -219,3 +219,54 @@ export const runMatchmakingManual = onRequest(async (req, res) => {
 
   res.status(200).json({ created });
 });
+
+/**
+ * キュー受付終了時のリセット（毎日23時JST）
+ * waiting 状態のユーザーを全員リセットして、システムをクリーンな状態に保つ
+ */
+export const resetQueueAtClose = onSchedule(
+  {
+    schedule: "0 23 * * *",
+    timeZone: "Asia/Tokyo",
+    memory: "256MiB",
+  },
+  async () => {
+    try {
+      const snapshot = await db
+        .collection("users")
+        .where("queue_status", "==", "waiting")
+        .get();
+
+      if (snapshot.empty) {
+        console.log("queue reset at close: no users in queue");
+        return;
+      }
+
+      const BATCH_SIZE = 500;
+      const docs = snapshot.docs;
+      let resetCount = 0;
+
+      for (let i = 0; i < docs.length; i += BATCH_SIZE) {
+        const batch = db.batch();
+        const chunk = docs.slice(i, i + BATCH_SIZE);
+
+        for (const doc of chunk) {
+          batch.update(doc.ref, {
+            queue_status: null,
+            queue_joined_at: null,
+            matched_match_id: null,
+            updated_at: FieldValue.serverTimestamp(),
+          });
+        }
+
+        await batch.commit();
+        resetCount += chunk.length;
+      }
+
+      console.log(`queue reset at close: ${resetCount} users reset`);
+    } catch (error) {
+      console.error("queue reset at close failed:", error);
+      throw error;
+    }
+  },
+);
