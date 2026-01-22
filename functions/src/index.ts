@@ -425,7 +425,13 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
     return;
   }
 
-  const shuffled = [...candidates];
+  // 最古の10人を保護（絶対に除外されない）
+  const protectedCount = Math.min(10, candidates.length);
+  const protectedUsers = candidates.slice(0, protectedCount);
+  const rest = candidates.slice(protectedCount);
+
+  // 残りをシャッフル（Fisher-Yates）
+  const shuffled = [...rest];
   for (let i = shuffled.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     const temp = shuffled[i];
@@ -433,8 +439,12 @@ export const runMatchmaking = onSchedule("every 1 minutes", async () => {
     shuffled[j] = temp;
   }
 
-  const remainder = shuffled.length % 10;
-  let remaining = remainder > 0 ? shuffled.slice(remainder) : shuffled;
+  // 保護 + シャッフル済みを結合
+  const combined = [...protectedUsers, ...shuffled];
+
+  // 余りは末尾から除外（= 新しいユーザーから除外）
+  const remainder = combined.length % 10;
+  let remaining = remainder > 0 ? combined.slice(0, -remainder) : combined;
   remaining = remaining.sort((a, b) => b.rating - a.rating);
 
   let created = 0;
