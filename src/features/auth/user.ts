@@ -31,9 +31,11 @@ export async function ensureUserExists(
 		return { isNewUser: true };
 	}
 
-	if (user.photoURL) {
+	// providerDataから最新のphotoURLを取得（Googleで画像変更時に反映される）
+	const latestPhotoURL = user.providerData[0]?.photoURL || user.photoURL;
+	if (latestPhotoURL) {
 		await updateDoc(userRef, {
-			photo_url: user.photoURL,
+			photo_url: latestPhotoURL,
 			updated_at: serverTimestamp(),
 		});
 	}
