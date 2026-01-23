@@ -26,8 +26,8 @@
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`
 
 ### 2) 受付時間
-- 受付時間は 20:00〜23:00
-- 23:00ちょうどは受付不可（20:00〜22:59:59 が可）
+- 受付時間は 18:00〜23:00
+- 23:00ちょうどは受付不可（18:00〜22:59:59 が可）
 - クライアント判定は端末のローカル時刻で行う
   - 関連ファイル: `src/features/queue/queue.ts`, `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`
 
@@ -48,7 +48,7 @@
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`
 
 ### 受付時間外
-- 受付不可メッセージ: 「20:00〜23:00 以外はマッチングを受け付けていません」
+- 受付不可メッセージ: 「18:00〜23:00 以外はマッチングを受け付けていません」
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`, `src/features/queue/queue.ts`
 
 ### ペナルティ中

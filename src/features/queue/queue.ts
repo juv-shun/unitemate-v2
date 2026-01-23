@@ -20,8 +20,8 @@ export async function startQueue(uid: string): Promise<void> {
 
 export function isQueueClosedAt(date: Date): boolean {
   const minutes = date.getHours() * 60 + date.getMinutes();
-  // 20時〜23時（1200分〜1380分）のみ開催、それ以外は閉鎖
-  return minutes < 1200 || minutes >= 1380;
+  // 18時〜23時（1080分〜1380分）のみ開催、それ以外は閉鎖
+  return minutes < 1080 || minutes >= 1380;
 }
 
 export async function cancelQueue(uid: string): Promise<void> {
