@@ -46,7 +46,9 @@
 | created_at | timestamp | 作成日時 |
 | updated_at | timestamp | 更新日時 |
 
-インデックス: queue_status + queue_joined_at
+インデックス:
+- queue_status + queue_joined_at
+- rating(desc) + total_matches(desc)
 
 セキュリティルール:
 - **queue_status**: クライアントは`"waiting"`と`null`のみ変更可能。`"matched"`への変更はバックエンドのみ
@@ -82,6 +84,8 @@ recent_results 要素:
 | updated_at | timestamp | 更新日時 |
 
 補足: フェーズ1の自動マッチ成立時は status を lobby_pending とする。
+
+インデックス: status + created_at
 
 セキュリティルール: 読み取りは可能だが、作成・更新は限定的
 
@@ -129,7 +133,8 @@ waiting -> lobby_pending -> completed
 | match_id | string | 試合ID |
 | reporter_user_id | string | 通報者ユーザーID |
 | reported_user_id | string | 被通報ユーザーID |
-| reason | string | no_show |
+| reason | string | no_show / troll / other |
+| reason_detail | string | reason が other の場合のみ必須 |
 | match_created_at | timestamp | マッチ成立時刻 |
 | reported_at | timestamp | 通報時刻 |
 | screenshot_url | string | スクリーンショットURL（任意） |
@@ -137,6 +142,10 @@ waiting -> lobby_pending -> completed
 アプリ側制約:
 - match内で reporter_user_id + reported_user_id の重複不可
 - 同一 match 内で reported_user_id に対する通報が **別ユーザーから3件** 集まったら、penalties を作成
+
+セキュリティルール:
+- 読み取りはマッチ参加者のみ
+- 作成はマッチ参加者のみ、自己通報禁止
 
 ---
 
