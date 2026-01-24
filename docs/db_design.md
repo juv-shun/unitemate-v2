@@ -7,6 +7,7 @@
 - 主要キーはドキュメントID（UUID相当）を使用する。
 - 変更履歴や集計に必要な「イベント性の高い情報」はサブコレクションで履歴化する。
 - 参照整合性はアプリ側で担保する（FirestoreはFK制約を持たない）。
+- Firestoreへのデータ保存時は、**必ず**`serverTimestamp()`を使用（`created_at`, `updated_at`等）。
 
 ---
 
@@ -47,6 +48,10 @@
 
 インデックス: queue_status + queue_joined_at
 
+セキュリティルール:
+- **queue_status**: クライアントは`"waiting"`と`null`のみ変更可能。`"matched"`への変更はバックエンドのみ
+- **matched_match_id**: クライアントから変更禁止（常に`null`を設定）
+
 recent_results 要素:
 - match_id: string
 - result: win / loss / invalid
@@ -57,7 +62,7 @@ recent_results 要素:
 
 
 
-### 3.3 matches
+### 3.2 matches
 試合単位のデータ。手動ルーム作成と自動マッチングの両方に利用。
 
 | フィールド名 | 型 | 説明 |
@@ -78,6 +83,8 @@ recent_results 要素:
 
 補足: フェーズ1の自動マッチ成立時は status を lobby_pending とする。
 
+セキュリティルール: 読み取りは可能だが、作成・更新は限定的
+
 状態遷移（matches.status）:
 
 ```
@@ -90,7 +97,7 @@ waiting -> lobby_pending -> completed
 
 ---
 
-### 3.4 matches/{matchId}/members
+### 3.3 matches/{matchId}/members
 試合参加者・観戦者（サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
@@ -110,9 +117,11 @@ waiting -> lobby_pending -> completed
 
 アプリ側制約: match内で user_id 重複不可、participant は最大10人
 
+セキュリティルール: 自分自身のドキュメントのみ操作可能
+
 ---
 
-### 3.5 matches/{matchId}/reports
+### 3.4 matches/{matchId}/reports
 未参加（ノーショー）通報の記録（サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
@@ -131,7 +140,7 @@ waiting -> lobby_pending -> completed
 
 ---
 
-### 3.6 matches/{matchId}/match_results
+### 3.5 matches/{matchId}/match_results
 試合結果の集計結果（サブコレクション、1件想定）。
 
 | フィールド名 | 型 | 説明 |
@@ -141,7 +150,7 @@ waiting -> lobby_pending -> completed
 
 ---
 
-### 3.7 matches/{matchId}/result_votes
+### 3.6 matches/{matchId}/result_votes
 結果入力（多数決の票、サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
@@ -154,7 +163,7 @@ waiting -> lobby_pending -> completed
 
 ---
 
-### 3.8 users/{userId}/penalties
+### 3.7 users/{userId}/penalties
 ノーショー等のペナルティ（ユーザー配下サブコレクション）。
 
 | フィールド名 | 型 | 説明 |
