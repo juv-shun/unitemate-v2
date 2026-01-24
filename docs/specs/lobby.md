@@ -59,5 +59,19 @@
 - 同数は「無効（invalid）」
   - 関連ファイル: `functions/src/result/index.ts`, `docs/requirements/phase2.md`
 
+## レート計算アルゴリズム
+- Elo 系（K係数を用いた期待勝率計算）で、同チーム/相手チームをレート順にペアリングして差分を算出
+- `final_result` が `invalid` の場合は全員のレート差分は 0
+- チーム内で余ったメンバーはレート差分 0
+- レート差分は四捨五入して整数化
+  - 関連ファイル: `functions/src/result/index.ts`
+
+## マイページの試合数/勝利数の加算
+- 勝敗確定時に `users` の `total_matches` / `total_wins` を更新
+- `invalid` の試合は `total_matches` に加算しない
+- `win` のみ `total_wins` を +1
+- `recent_results` に最新20件を保存し、マイページで参照
+  - 関連ファイル: `functions/src/result/index.ts`, `src/features/mypage/MyPage.tsx`
+
 ## 備考/要確認
 - ペナルティ時間は現行実装が30分だが、既存ドキュメントで60分記載があるため要確認
