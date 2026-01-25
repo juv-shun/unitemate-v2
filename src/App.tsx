@@ -9,6 +9,7 @@ import { FaqPage } from "./features/faq/FaqPage";
 import { MatchResultPage } from "./features/match/MatchResultPage";
 import { MonitorPage } from "./features/monitor/MonitorPage";
 import { MyPage } from "./features/mypage/MyPage";
+import { NotificationProvider } from "./features/notifications/NotificationContext";
 import { OnboardingPage } from "./features/onboarding/OnboardingPage";
 import { HomePage } from "./features/profile/HomePage";
 import { QueueProvider } from "./features/queue/QueueContext";
@@ -18,8 +19,9 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <QueueProvider>
-          <MatchProvider>
+        <NotificationProvider>
+          <QueueProvider>
+            <MatchProvider>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
               <Route
@@ -80,8 +82,9 @@ function App() {
               />
               <Route path="/monitor" element={<MonitorPage />} />
             </Routes>
-          </MatchProvider>
-        </QueueProvider>
+            </MatchProvider>
+          </QueueProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   );

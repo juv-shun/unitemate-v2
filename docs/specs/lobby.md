@@ -55,7 +55,10 @@
 - ペナルティ中はインキュー不可（`users.banned_until`）
 - 既に成立しているマッチ（進行中のロビー）には影響しない
 - 現行実装のペナルティ時間は **30分**
-  - 関連ファイル: `functions/src/report/index.ts`, `src/features/queue/QueueContext.tsx`, `src/features/queue/components/QueueSection.tsx`
+- ペナルティ付与時、通報した全ユーザーにアプリ内通知を送信
+  - 通知はサイドバー/ヘッダーのベルアイコンから確認可能
+  - 通知データは `users/{userId}/notifications` に保存
+  - 関連ファイル: `functions/src/report/index.ts`, `src/features/queue/QueueContext.tsx`, `src/features/queue/components/QueueSection.tsx`, `src/features/notifications/`
 
 ## 試合終了/結果報告
 - 「試合終了 / 退出」ボタンで結果入力モーダルを開く

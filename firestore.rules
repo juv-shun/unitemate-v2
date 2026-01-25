@@ -38,6 +38,17 @@ service cloud.firestore {
         // 作成・更新・削除: バックエンドのみ
         allow create, update, delete: if false;
       }
+
+      // notifications サブコレクション
+      match /notifications/{notificationId} {
+        // 読み取り: 本人のみ
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // 更新: 本人のみ（readフラグのみ変更可能）
+        allow update: if request.auth != null && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).changedKeys().hasOnly(["read"]);
+        // 作成・削除: バックエンドのみ
+        allow create, delete: if false;
+      }
     }
 
     // matches コレクション

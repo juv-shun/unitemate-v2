@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
+import { NotificationBell } from "../features/notifications/components/NotificationBell";
 
 interface NavItem {
   label: string;
@@ -175,7 +176,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       }}
     >
       {/* ロゴ */}
-      <div className="p-6 mb-4">
+      <div className="p-6 mb-4 flex items-center justify-between">
         <h1
           className="text-xl font-bold tracking-widest"
           style={{
@@ -185,6 +186,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         >
           V-ARENA
         </h1>
+        <NotificationBell />
       </div>
 
       {/* ナビゲーション */}

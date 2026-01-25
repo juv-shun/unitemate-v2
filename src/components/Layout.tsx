@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NotificationBell } from "../features/notifications/components/NotificationBell";
 import { Sidebar } from "./Sidebar";
 
 interface LayoutProps {
@@ -130,7 +131,7 @@ export function Layout({ children }: LayoutProps) {
             <MenuIcon />
           </button>
           <h1
-            className="text-lg font-bold tracking-widest"
+            className="text-lg font-bold tracking-widest flex-1"
             style={{
               fontFamily: "var(--font-display)",
               color: "var(--color-accent-cyan)",
@@ -138,6 +139,7 @@ export function Layout({ children }: LayoutProps) {
           >
             V-ARENA
           </h1>
+          <NotificationBell />
         </header>
 
         {/* ページコンテンツ */}

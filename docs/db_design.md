@@ -16,6 +16,7 @@
 - users（ユーザー）
   - rating_changes（サブコレクション）
   - penalties（サブコレクション）
+  - notifications（サブコレクション）
   - pick_histories（サブコレクション）
 - matches（試合/ルーム）
   - members（サブコレクション）
@@ -183,6 +184,28 @@ waiting -> lobby_pending -> completed
 | created_at | timestamp | ペナルティ確定時刻 |
 
 インデックス: banned_until
+
+---
+
+### 3.8 users/{userId}/notifications
+通知（ユーザー配下サブコレクション）。
+
+| フィールド名 | 型 | 説明 |
+| --- | --- | --- |
+| type | string | 通知タイプ（penalty_applied） |
+| match_id | string | 関連マッチID |
+| reported_user_id | string | ペナルティを受けたユーザーID |
+| reported_user_name | string | ペナルティを受けたユーザー名 |
+| message | string | 表示メッセージ |
+| read | boolean | 既読フラグ |
+| created_at | timestamp | 作成日時 |
+
+ドキュメントID: `{matchId}_{reportedUserId}`（重複防止用の固定形式）
+
+セキュリティルール:
+- 読み取り: 本人のみ
+- 更新: 本人のみ（readフラグのみ変更可能）
+- 作成・削除: バックエンドのみ
 
 ---
 
