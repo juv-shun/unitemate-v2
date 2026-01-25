@@ -1,193 +1,205 @@
 import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { playMatchSound } from "./matchSound";
 import {
-  cancelQueue as cancelQueueFn,
-  isQueueClosedAt,
-  type QueueData,
-  resetQueueState as resetQueueStateFn,
-  startQueue as startQueueFn,
-  subscribeToQueueStatus,
+	cancelQueue as cancelQueueFn,
+	isQueueClosedAt,
+	type QueueData,
+	resetQueueState as resetQueueStateFn,
+	startQueue as startQueueFn,
+	subscribeToQueueCount,
+	subscribeToQueueStatus,
 } from "./queue";
 import type { QueueStatus } from "./types";
 
 interface QueueContextType {
-  queueStatus: QueueStatus;
-  queueJoinedAt: Date | null;
-  matchedMatchId: string | null;
-  queueLoading: boolean;
-  bannedUntil: Date | null;
-  isBanned: boolean;
-  remainingBanTime: number | null;
-  startQueue: () => Promise<void>;
-  cancelQueue: () => Promise<void>;
-  resetQueueState: () => Promise<void>;
+	queueStatus: QueueStatus;
+	queueJoinedAt: Date | null;
+	matchedMatchId: string | null;
+	queueLoading: boolean;
+	bannedUntil: Date | null;
+	isBanned: boolean;
+	remainingBanTime: number | null;
+	queueCount: number;
+	startQueue: () => Promise<void>;
+	cancelQueue: () => Promise<void>;
+	resetQueueState: () => Promise<void>;
 }
 
 const QueueContext = createContext<QueueContextType | null>(null);
 
 interface QueueProviderProps {
-  children: ReactNode;
+	children: ReactNode;
 }
 
 export function QueueProvider({ children }: QueueProviderProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [queueStatus, setQueueStatus] = useState<QueueStatus>(null);
-  const [queueJoinedAt, setQueueJoinedAt] = useState<Date | null>(null);
-  const [matchedMatchId, setMatchedMatchId] = useState<string | null>(null);
-  const [bannedUntil, setBannedUntil] = useState<Date | null>(null);
-  const [queueLoading, setQueueLoading] = useState(true);
+	const { user } = useAuth();
+	const navigate = useNavigate();
+	const location = useLocation();
+	const [queueStatus, setQueueStatus] = useState<QueueStatus>(null);
+	const [queueJoinedAt, setQueueJoinedAt] = useState<Date | null>(null);
+	const [matchedMatchId, setMatchedMatchId] = useState<string | null>(null);
+	const [bannedUntil, setBannedUntil] = useState<Date | null>(null);
+	const [queueLoading, setQueueLoading] = useState(true);
+	const [queueCount, setQueueCount] = useState(0);
 
-  useEffect(() => {
-    if (!user) {
-      setQueueStatus(null);
-      setQueueJoinedAt(null);
-      setMatchedMatchId(null);
-      setBannedUntil(null);
-      setQueueLoading(false);
-      return;
-    }
+	// キュー内の人数をリアルタイム監視
+	useEffect(() => {
+		const unsubscribe = subscribeToQueueCount((count) => {
+			setQueueCount(count);
+		});
+		return () => unsubscribe();
+	}, []);
 
-    setQueueLoading(true);
-    const unsubscribe = subscribeToQueueStatus(user.uid, (data: QueueData) => {
-      setQueueStatus(data.status);
-      setQueueJoinedAt(data.joinedAt);
-      setMatchedMatchId(data.matchedMatchId);
-      setBannedUntil(data.bannedUntil);
-      setQueueLoading(false);
-    });
+	useEffect(() => {
+		if (!user) {
+			setQueueStatus(null);
+			setQueueJoinedAt(null);
+			setMatchedMatchId(null);
+			setBannedUntil(null);
+			setQueueLoading(false);
+			return;
+		}
 
-    return () => unsubscribe();
-  }, [user]);
+		setQueueLoading(true);
+		const unsubscribe = subscribeToQueueStatus(user.uid, (data: QueueData) => {
+			setQueueStatus(data.status);
+			setQueueJoinedAt(data.joinedAt);
+			setMatchedMatchId(data.matchedMatchId);
+			setBannedUntil(data.bannedUntil);
+			setQueueLoading(false);
+		});
 
-  const prevQueueStatus = useRef(queueStatus);
-  const lastPlayedMatchId = useRef<string | null>(null);
+		return () => unsubscribe();
+	}, [user]);
 
-  useEffect(() => {
-    const justMatched =
-      prevQueueStatus.current !== "matched" && queueStatus === "matched";
-    const isHomePage = location.pathname === "/";
+	const prevQueueStatus = useRef(queueStatus);
+	const lastPlayedMatchId = useRef<string | null>(null);
 
-    // Update ref for next render
-    prevQueueStatus.current = queueStatus;
+	useEffect(() => {
+		const justMatched =
+			prevQueueStatus.current !== "matched" && queueStatus === "matched";
+		const isHomePage = location.pathname === "/";
 
-    if (queueStatus !== "matched") {
-      lastPlayedMatchId.current = null;
-      return;
-    }
-    if (!matchedMatchId) return;
+		// Update ref for next render
+		prevQueueStatus.current = queueStatus;
 
-    if (justMatched && lastPlayedMatchId.current !== matchedMatchId) {
-      lastPlayedMatchId.current = matchedMatchId;
-      void playMatchSound();
-    }
+		if (queueStatus !== "matched") {
+			lastPlayedMatchId.current = null;
+			return;
+		}
+		if (!matchedMatchId) return;
 
-    if (justMatched || isHomePage) {
-      const targetPath = `/lobby/${matchedMatchId}`;
-      if (location.pathname !== targetPath) {
-        navigate(targetPath, { replace: true });
-      }
-    }
-  }, [queueStatus, matchedMatchId, location.pathname, navigate]);
+		if (justMatched && lastPlayedMatchId.current !== matchedMatchId) {
+			lastPlayedMatchId.current = matchedMatchId;
+			void playMatchSound();
+		}
 
-  const isBanned = useMemo(() => {
-    if (!bannedUntil) return false;
+		if (justMatched || isHomePage) {
+			const targetPath = `/lobby/${matchedMatchId}`;
+			if (location.pathname !== targetPath) {
+				navigate(targetPath, { replace: true });
+			}
+		}
+	}, [queueStatus, matchedMatchId, location.pathname, navigate]);
 
-    return bannedUntil.getTime() > Date.now();
-  }, [bannedUntil]);
+	const isBanned = useMemo(() => {
+		if (!bannedUntil) return false;
 
-  const remainingBanTime = useMemo(() => {
-    if (!bannedUntil || !isBanned) return null;
-    return bannedUntil.getTime() - Date.now();
-  }, [bannedUntil, isBanned]);
+		return bannedUntil.getTime() > Date.now();
+	}, [bannedUntil]);
 
-  const startQueue = useCallback(async () => {
-    if (!user) return;
-    if (isQueueClosedAt(new Date())) {
-      throw new Error("現在はマッチング受付時間外です");
-    }
-    if (isBanned) {
-      throw new Error("ペナルティ中のため、マッチングに参加できません");
-    }
-    await startQueueFn(user.uid);
-  }, [user, isBanned]);
+	const remainingBanTime = useMemo(() => {
+		if (!bannedUntil || !isBanned) return null;
+		return bannedUntil.getTime() - Date.now();
+	}, [bannedUntil, isBanned]);
 
-  const cancelQueue = useCallback(async () => {
-    if (!user) return;
-    await cancelQueueFn(user.uid);
-  }, [user]);
+	const startQueue = useCallback(async () => {
+		if (!user) return;
+		if (isQueueClosedAt(new Date())) {
+			throw new Error("現在はマッチング受付時間外です");
+		}
+		if (isBanned) {
+			throw new Error("ペナルティ中のため、マッチングに参加できません");
+		}
+		await startQueueFn(user.uid);
+	}, [user, isBanned]);
 
-  const resetQueueState = useCallback(async () => {
-    if (!user) return;
-    await resetQueueStateFn(user.uid);
-  }, [user]);
+	const cancelQueue = useCallback(async () => {
+		if (!user) return;
+		await cancelQueueFn(user.uid);
+	}, [user]);
 
-  // 最新のqueueStatusをRefで保持（cleanup関数内で参照するため）
-  const latestQueueStatus = useRef(queueStatus);
-  useEffect(() => {
-    latestQueueStatus.current = queueStatus;
-  }, [queueStatus]);
+	const resetQueueState = useCallback(async () => {
+		if (!user) return;
+		await resetQueueStateFn(user.uid);
+	}, [user]);
 
-  // ページ離脱/アプリ終了時の処理
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (latestQueueStatus.current === "waiting") {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
+	// 最新のqueueStatusをRefで保持（cleanup関数内で参照するため）
+	const latestQueueStatus = useRef(queueStatus);
+	useEffect(() => {
+		latestQueueStatus.current = queueStatus;
+	}, [queueStatus]);
 
-    window.addEventListener("beforeunload", handleBeforeUnload);
+	// ページ離脱/アプリ終了時の処理
+	useEffect(() => {
+		const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+			if (latestQueueStatus.current === "waiting") {
+				e.preventDefault();
+				e.returnValue = "";
+			}
+		};
 
-    return () => {
-      window.removeEventListener("beforeunload", handleBeforeUnload);
+		window.addEventListener("beforeunload", handleBeforeUnload);
 
-      // アンマウント時（リロード、閉じる、ログアウト等）に待機中ならキャンセル試行
-      // 注意: ブラウザ終了時の非同期処理は保証されない
-      if (latestQueueStatus.current === "waiting") {
-        cancelQueue().catch((err) => {
-          console.error("Failed to auto-cancel queue on unmount:", err);
-        });
-      }
-    };
-  }, [cancelQueue]);
+		return () => {
+			window.removeEventListener("beforeunload", handleBeforeUnload);
 
-  return (
-    <QueueContext.Provider
-      value={{
-        queueStatus,
-        queueJoinedAt,
-        matchedMatchId,
-        queueLoading,
-        bannedUntil,
-        isBanned,
-        remainingBanTime,
-        startQueue,
-        cancelQueue,
-        resetQueueState,
-      }}
-    >
-      {children}
-    </QueueContext.Provider>
-  );
+			// アンマウント時（リロード、閉じる、ログアウト等）に待機中ならキャンセル試行
+			// 注意: ブラウザ終了時の非同期処理は保証されない
+			if (latestQueueStatus.current === "waiting") {
+				cancelQueue().catch((err) => {
+					console.error("Failed to auto-cancel queue on unmount:", err);
+				});
+			}
+		};
+	}, [cancelQueue]);
+
+	return (
+		<QueueContext.Provider
+			value={{
+				queueStatus,
+				queueJoinedAt,
+				matchedMatchId,
+				queueLoading,
+				bannedUntil,
+				isBanned,
+				remainingBanTime,
+				queueCount,
+				startQueue,
+				cancelQueue,
+				resetQueueState,
+			}}
+		>
+			{children}
+		</QueueContext.Provider>
+	);
 }
 
 export function useQueue(): QueueContextType {
-  const context = useContext(QueueContext);
-  if (!context) {
-    throw new Error("useQueue must be used within a QueueProvider");
-  }
-  return context;
+	const context = useContext(QueueContext);
+	if (!context) {
+		throw new Error("useQueue must be used within a QueueProvider");
+	}
+	return context;
 }

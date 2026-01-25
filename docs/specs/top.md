@@ -17,7 +17,8 @@
 - 待機ステータス表示
 - インキュー開始/キャンセル
 - インキュー不可時の理由表示（受付時間外/ペナルティ）
-  - 関連ファイル: `src/features/profile/HomePage.tsx`, `src/features/queue/components/QueueSection.tsx`
+- マッチ成立間近メッセージ（キュー人数が8〜9人の時）
+  - 関連ファイル: `src/features/profile/HomePage.tsx`, `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`, `src/features/queue/queue.ts`
 
 ## インキュー可否判定
 ### 1) ログイン
@@ -39,12 +40,18 @@
 ## 表示状態
 ### 通常（未参加）
 - 「FIND MATCH」ボタンを表示
+- マッチ成立間近メッセージ（キュー人数が8〜9人の時）
+  - 表示条件: キュー内の待機人数が8人または9人
+  - メッセージ: 「あと X人 でマッチが成立します / ぜひ、ご参加ください！」
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`
 
 ### 待機中（queue_status == "waiting"）
 - 経過時間を秒表示
 - キャンセルボタンを表示
 - 待機中でも他ページへ遷移可能
+- マッチ成立間近メッセージ（キュー人数が8〜9人の時）
+  - 表示条件: キュー内の待機人数が8人または9人
+  - メッセージ: 「あと X人 でマッチが成立します / もう少しお待ちください」
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`
 
 ### 受付時間外
@@ -103,6 +110,12 @@
 - 毎日 23:00（JST）に `queue_status == "waiting"` を自動リセット
 - 対象ユーザーは `queue_status: null`, `queue_joined_at: null`, `matched_match_id: null` に更新
   - 関連ファイル: `functions/src/matchmaking/index.ts`
+
+## キュー人数監視（クライアント）
+- `queue_status == "waiting"` のユーザー数をFirestoreリアルタイムリスナーで監視
+- コスト効率のため、最大10人までをカウント（`limit(10)`）
+- 人数変動時に自動でUIが更新される
+  - 関連ファイル: `src/features/queue/queue.ts`, `src/features/queue/QueueContext.tsx`
 
 ## 備考
 - 受付時間判定はクライアントのローカル時刻、リセットはJST固定のためズレる可能性あり
