@@ -19,7 +19,7 @@ function XIcon() {
 function ShareToXButton() {
 	const handleShare = () => {
 		const shareText = "V-ARENAでマッチング待機中。一緒にやりましょう！ #Ｖアリ";
-		const shareUrl = "https://v-arena.com";
+		const shareUrl = "https://v-arena.shink-poke.com/";
 		const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
 
 		window.open(
