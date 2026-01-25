@@ -49,15 +49,17 @@ export function MatchLobby() {
 		Array<{ id: string; name: string; type: string; imageUrl: string }>
 	>([]);
 	const [loadingBanned, setLoadingBanned] = useState(false);
-	const [isSeatingTimeout, setIsSeatingTimeout] = useState(false);
 	const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
-	const [timeoutModalDismissed, setTimeoutModalDismissed] = useState(false);
+	const [showSeatingTimeoutModal, setShowSeatingTimeoutModal] = useState(false);
+	const [seatingTimeoutDismissed, setSeatingTimeoutDismissed] = useState(false);
 
 	useEffect(() => {
 		setShowLobbyScreen(false);
 		setEntryError("");
 		setShowEndMatchModal(false);
 		setShowLobbyOverwriteModal(false);
+		setShowSeatingTimeoutModal(false);
+		setSeatingTimeoutDismissed(false);
 		setEndMatchResult("");
 		setEndMatchError("");
 	}, [currentMatch?.id]);
@@ -99,11 +101,9 @@ export function MatchLobby() {
 		const initialRemaining = calcRemaining();
 		setRemainingSeconds(initialRemaining);
 
-		// 既に0秒以下ならモーダル表示（キャンセル済みでなければ）
-		if (initialRemaining <= 0 && !showEndMatchModal && !timeoutModalDismissed) {
-			setIsSeatingTimeout(true);
-			setEndMatchResult("invalid");
-			setShowEndMatchModal(true);
+		// 既に0秒以下なら通知モーダル表示（閉じ済みでなければ）
+		if (initialRemaining <= 0 && !showSeatingTimeoutModal && !seatingTimeoutDismissed) {
+			setShowSeatingTimeoutModal(true);
 			return;
 		}
 
@@ -112,16 +112,14 @@ export function MatchLobby() {
 			const remaining = calcRemaining();
 			setRemainingSeconds(remaining);
 
-			if (remaining <= 0 && !showEndMatchModal && !timeoutModalDismissed) {
-				setIsSeatingTimeout(true);
-				setEndMatchResult("invalid");
-				setShowEndMatchModal(true);
+			if (remaining <= 0 && !showSeatingTimeoutModal && !seatingTimeoutDismissed) {
+				setShowSeatingTimeoutModal(true);
 				clearInterval(intervalId);
 			}
 		}, 1000);
 
 		return () => clearInterval(intervalId);
-	}, [currentMatch, isAllSeated, isSeated, showEndMatchModal, timeoutModalDismissed]);
+	}, [currentMatch, isAllSeated, isSeated, showSeatingTimeoutModal, seatingTimeoutDismissed]);
 
 	// ロビーID設定
 	const handleSetLobbyId = async () => {
@@ -719,18 +717,6 @@ export function MatchLobby() {
 						>
 							試合結果の入力
 						</h2>
-						{isSeatingTimeout && (
-							<p
-								className="mt-3 text-sm font-bold py-2 px-3 rounded-lg"
-								style={{
-									backgroundColor: "rgba(234, 179, 8, 0.15)",
-									color: "#eab308",
-									border: "1px solid rgba(234, 179, 8, 0.3)",
-								}}
-							>
-								5分経過しました。全員着席していません。無効試合として退出してください。
-							</p>
-						)}
 						<p className="mt-2 text-sm text-slate-300">
 							試合終了前に結果を選択してください（必須）。
 						</p>
@@ -779,10 +765,6 @@ export function MatchLobby() {
 									setShowEndMatchModal(false);
 									setEndMatchError("");
 									setEndMatchResult("");
-									if (isSeatingTimeout) {
-										setTimeoutModalDismissed(true);
-									}
-									setIsSeatingTimeout(false);
 								}}
 								className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
 								style={{
@@ -826,6 +808,91 @@ export function MatchLobby() {
 								{endMatchSubmitting ? "処理中..." : "試合終了"}
 							</button>
 						</div>
+					</div>
+				</div>
+			)}
+
+			{/* タイムアウト通知モーダル */}
+			{showSeatingTimeoutModal && (
+				<div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+					<div
+						className="absolute inset-0"
+						style={{ backgroundColor: "rgba(2, 6, 23, 0.88)" }}
+					/>
+					<div
+						className="relative w-full max-w-md rounded-2xl p-6 text-center"
+						style={{
+							backgroundColor: "var(--color-surface)",
+							boxShadow:
+								"0 24px 60px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+							border: "1px solid rgba(234, 179, 8, 0.3)",
+						}}
+					>
+						{/* 警告アイコン */}
+						<div
+							className="mx-auto w-16 h-16 flex items-center justify-center rounded-full mb-4"
+							style={{
+								backgroundColor: "rgba(234, 179, 8, 0.2)",
+								border: "2px solid rgba(234, 179, 8, 0.4)",
+							}}
+						>
+							<svg
+								className="w-8 h-8"
+								fill="none"
+								stroke="#eab308"
+								viewBox="0 0 24 24"
+								aria-hidden="true"
+							>
+								<path
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									strokeWidth={2}
+									d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+								/>
+							</svg>
+						</div>
+
+						{/* タイトル */}
+						<h2
+							className="text-xl font-bold tracking-wide mb-3"
+							style={{
+								fontFamily: "var(--font-display)",
+								color: "#eab308",
+							}}
+						>
+							タイムアウト
+						</h2>
+
+						{/* メッセージ */}
+						<p className="text-sm text-slate-300 mb-6">
+							5分経過しました。未着席ユーザーがいるので、無効試合として退出してください。必要であれば、未着席ユーザーを通報してください。
+						</p>
+
+						{/* 閉じるボタン */}
+						<button
+							type="button"
+							onClick={() => {
+								setShowSeatingTimeoutModal(false);
+								setSeatingTimeoutDismissed(true);
+							}}
+							className="w-full px-6 py-3 rounded-lg text-sm font-bold uppercase tracking-wide transition-all"
+							style={{
+								backgroundColor: "rgba(234, 179, 8, 0.2)",
+								color: "#eab308",
+								border: "1px solid rgba(234, 179, 8, 0.4)",
+								fontFamily: "var(--font-display)",
+							}}
+							onMouseEnter={(e) => {
+								e.currentTarget.style.backgroundColor =
+									"rgba(234, 179, 8, 0.35)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.backgroundColor =
+									"rgba(234, 179, 8, 0.2)";
+							}}
+						>
+							閉じる
+						</button>
 					</div>
 				</div>
 			)}
