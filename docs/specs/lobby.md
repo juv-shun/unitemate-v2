@@ -21,6 +21,17 @@
 - 「ロビーへ進む」等のボタン押下で着席状態（`seated_at`）になる
   - 関連ファイル: `src/features/queue/QueueContext.tsx`, `src/features/queue/matchSound.ts`, `src/features/draft/components/MatchLobby.tsx`, `src/features/draft/match.ts`, `functions/src/lobby/index.ts`
 
+## 着席タイムアウト
+- マッチ成立（`match.created_at`）から **5分** 経過しても全員着席していない場合、退出モーダルを自動表示
+- 自分が着席済みの場合のみ、カウントダウン（残り時間）をヘッダー付近に表示
+- 自分が未着席の場合はカウントダウン非表示（着席前モーダルが表示されたまま）
+- 全員着席するとカウントダウンは非表示になり、タイムアウト処理は発生しない
+- タイムアウトで自動表示された退出モーダル:
+  - 「5分経過しました。全員着席していません。」のメッセージを表示
+  - 試合結果は「無効」がデフォルト選択される
+  - キャンセルを押すとロビーに戻り、以降タイムアウトモーダルは再表示されない
+  - 関連ファイル: `src/features/draft/components/MatchLobby.tsx`
+
 ## ロビーID共有
 - ロビーIDは8桁の数字
 - 誰でも入力可能、既存ロビーIDがあっても上書き可能（後勝ち）

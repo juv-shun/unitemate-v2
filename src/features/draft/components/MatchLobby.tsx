@@ -16,6 +16,7 @@ export function MatchLobby() {
 		firstTeamMembers,
 		secondTeamMembers,
 		myMember,
+		isAllSeated,
 		setLobbyId,
 		setSeated,
 		setLobbyIssue,
@@ -48,6 +49,9 @@ export function MatchLobby() {
 		Array<{ id: string; name: string; type: string; imageUrl: string }>
 	>([]);
 	const [loadingBanned, setLoadingBanned] = useState(false);
+	const [isSeatingTimeout, setIsSeatingTimeout] = useState(false);
+	const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+	const [timeoutModalDismissed, setTimeoutModalDismissed] = useState(false);
 
 	useEffect(() => {
 		setShowLobbyScreen(false);
@@ -72,6 +76,52 @@ export function MatchLobby() {
 				.finally(() => setLoadingBanned(false));
 		}
 	}, [showLobbyScreen, myMember?.seated_at]);
+
+	// 着席タイムアウト用カウントダウン
+	const SEATING_TIMEOUT_MS = 5 * 60 * 1000; // 5分
+	const isSeated = myMember?.seated_at != null;
+
+	useEffect(() => {
+		// 前提条件チェック
+		if (!currentMatch || isAllSeated || !isSeated) {
+			setRemainingSeconds(null);
+			return;
+		}
+
+		// match.created_at から残り時間を計算する関数
+		const calcRemaining = () => {
+			const matchCreatedTime = currentMatch.created_at.getTime();
+			const timeoutTime = matchCreatedTime + SEATING_TIMEOUT_MS;
+			return Math.max(0, Math.ceil((timeoutTime - Date.now()) / 1000));
+		};
+
+		// 初期値を設定
+		const initialRemaining = calcRemaining();
+		setRemainingSeconds(initialRemaining);
+
+		// 既に0秒以下ならモーダル表示（キャンセル済みでなければ）
+		if (initialRemaining <= 0 && !showEndMatchModal && !timeoutModalDismissed) {
+			setIsSeatingTimeout(true);
+			setEndMatchResult("invalid");
+			setShowEndMatchModal(true);
+			return;
+		}
+
+		// 1秒ごとに更新
+		const intervalId = setInterval(() => {
+			const remaining = calcRemaining();
+			setRemainingSeconds(remaining);
+
+			if (remaining <= 0 && !showEndMatchModal && !timeoutModalDismissed) {
+				setIsSeatingTimeout(true);
+				setEndMatchResult("invalid");
+				setShowEndMatchModal(true);
+				clearInterval(intervalId);
+			}
+		}, 1000);
+
+		return () => clearInterval(intervalId);
+	}, [currentMatch, isAllSeated, isSeated, showEndMatchModal, timeoutModalDismissed]);
 
 	// ロビーID設定
 	const handleSetLobbyId = async () => {
@@ -256,10 +306,16 @@ export function MatchLobby() {
 		);
 	}
 
-	const isSeated = myMember?.seated_at != null;
 	const hasLobbyIssue = myMember?.lobby_issue === true;
 	const hasLobbyCreating = myMember?.lobby_creating === true;
 	const shouldShowModal = !showLobbyScreen && !isSeated;
+
+	// 分:秒 形式にフォーマット
+	const formatTime = (seconds: number) => {
+		const m = Math.floor(seconds / 60);
+		const s = seconds % 60;
+		return `${m}:${s.toString().padStart(2, "0")}`;
+	};
 
 	return (
 		<div className="space-y-6 animate-fade-in">
@@ -663,6 +719,18 @@ export function MatchLobby() {
 						>
 							試合結果の入力
 						</h2>
+						{isSeatingTimeout && (
+							<p
+								className="mt-3 text-sm font-bold py-2 px-3 rounded-lg"
+								style={{
+									backgroundColor: "rgba(234, 179, 8, 0.15)",
+									color: "#eab308",
+									border: "1px solid rgba(234, 179, 8, 0.3)",
+								}}
+							>
+								5分経過しました。全員着席していません。無効試合として退出してください。
+							</p>
+						)}
 						<p className="mt-2 text-sm text-slate-300">
 							試合終了前に結果を選択してください（必須）。
 						</p>
@@ -710,6 +778,11 @@ export function MatchLobby() {
 								onClick={() => {
 									setShowEndMatchModal(false);
 									setEndMatchError("");
+									setEndMatchResult("");
+									if (isSeatingTimeout) {
+										setTimeoutModalDismissed(true);
+									}
+									setIsSeatingTimeout(false);
 								}}
 								className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
 								style={{
@@ -871,6 +944,27 @@ export function MatchLobby() {
 
 			{!shouldShowModal && (
 				<>
+					{/* 着席タイムアウトカウントダウン */}
+					{remainingSeconds !== null && !isAllSeated && (
+						<div
+							className="text-center py-3 px-4 rounded-lg"
+							style={{
+								backgroundColor: "rgba(234, 179, 8, 0.15)",
+								border: "1px solid rgba(234, 179, 8, 0.3)",
+							}}
+						>
+							<span
+								className="text-sm font-bold tracking-wide"
+								style={{
+									color: "#eab308",
+									fontFamily: "var(--font-display)",
+								}}
+							>
+								全員着席まで残り {formatTime(remainingSeconds)}
+							</span>
+						</div>
+					)}
+
 					{/* ロビーID入力セクション */}
 					<div
 						className="rounded-xl p-6 space-y-4 relative overflow-hidden"
