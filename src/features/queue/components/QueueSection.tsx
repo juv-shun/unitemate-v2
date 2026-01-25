@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
+import { fetchActiveMatches } from "../../monitor/monitor";
 import { useQueue } from "../QueueContext";
 import { unlockMatchSound } from "../matchSound";
 import { isQueueClosedAt } from "../queue";
@@ -39,7 +40,20 @@ export function QueueSection() {
 	const [isQueueClosed, setIsQueueClosed] = useState(() =>
 		isQueueClosedAt(new Date()),
 	);
+	const [showStatsModal, setShowStatsModal] = useState(false);
+	const [statsData, setStatsData] = useState<{
+		queueCount: number;
+		activeMatchCount: number;
+		oldestMatchCreatedAt: Date | null;
+		fetchedAt: Date;
+	} | null>(null);
+	const showStatsModalRef = useRef(showStatsModal);
 	const navigate = useNavigate();
+
+	// showStatsModalの最新値をrefで追跡
+	useEffect(() => {
+		showStatsModalRef.current = showStatsModal;
+	}, [showStatsModal]);
 
 	useEffect(() => {
 		if (queueStatus !== "waiting" || !queueJoinedAt) {
@@ -67,6 +81,41 @@ export function QueueSection() {
 		const interval = setInterval(updateClosedState, 60 * 1000);
 		return () => clearInterval(interval);
 	}, []);
+
+	// 5分間隔で統計情報モーダルを表示
+	const STATS_MODAL_INTERVAL_MS = 5 * 60 * 1000;
+
+	useEffect(() => {
+		// キュー待機中のみ動作
+		if (queueStatus !== "waiting") {
+			setShowStatsModal(false);
+			setStatsData(null);
+			return;
+		}
+
+		const showStats = async () => {
+			// 既にモーダルが表示されている場合はスキップ
+			if (showStatsModalRef.current) return;
+
+			try {
+				const activeMatches = await fetchActiveMatches();
+				setStatsData({
+					queueCount,
+					activeMatchCount: activeMatches.length,
+					oldestMatchCreatedAt:
+						activeMatches.length > 0 ? activeMatches[0].createdAt : null,
+					fetchedAt: new Date(),
+				});
+				setShowStatsModal(true);
+			} catch (err) {
+				console.error("Failed to fetch stats:", err);
+			}
+		};
+
+		const intervalId = setInterval(showStats, STATS_MODAL_INTERVAL_MS);
+
+		return () => clearInterval(intervalId);
+	}, [queueStatus, queueCount]);
 
 	const handleStartQueue = async () => {
 		setIsProcessing(true);
@@ -97,98 +146,231 @@ export function QueueSection() {
 
 	if (queueStatus === "waiting") {
 		return (
-			<div
-				className="relative rounded-lg p-6 text-center overflow-hidden"
-				style={{
-					backgroundColor: "var(--color-surface)",
-					boxShadow:
-						"0 0 20px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)",
-				}}
-			>
-				{/* Pulsing border effect */}
+			<>
 				<div
-					className="absolute inset-0 rounded-lg animate-pulse"
+					className="relative rounded-lg p-6 text-center overflow-hidden"
 					style={{
-						border: "1px solid var(--color-accent-cyan)",
-						opacity: 0.6,
+						backgroundColor: "var(--color-surface)",
+						boxShadow:
+							"0 0 20px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)",
 					}}
-				/>
+				>
+					{/* Pulsing border effect */}
+					<div
+						className="absolute inset-0 rounded-lg animate-pulse"
+						style={{
+							border: "1px solid var(--color-accent-cyan)",
+							opacity: 0.6,
+						}}
+					/>
 
-				<div className="relative z-10 flex flex-col items-center gap-4">
-					<SearchingIndicator size={56} />
+					<div className="relative z-10 flex flex-col items-center gap-4">
+						<SearchingIndicator size={56} />
 
-					<div>
-						<p
-							className="text-lg font-semibold tracking-wider"
-							style={{
-								fontFamily: "var(--font-display)",
-								color: "var(--color-accent-cyan)",
-							}}
-						>
-							SEARCHING FOR MATCH
-						</p>
-						<p
-							className="text-2xl font-bold mt-1 tabular-nums"
-							style={{
-								fontFamily: "var(--font-display)",
-								color: "var(--color-text-primary)",
-							}}
-						>
-							{formatElapsedTime(elapsedSeconds)}
-						</p>
-					</div>
-
-					{(queueCount === 8 || queueCount === 9) && (
-						<div
-							className="rounded-lg px-4 py-3 text-center"
-							style={{
-								backgroundColor: "rgba(6, 182, 212, 0.15)",
-								border: "1px solid var(--color-accent-cyan)",
-							}}
-						>
+						<div>
 							<p
-								className="text-sm font-semibold"
+								className="text-lg font-semibold tracking-wider"
 								style={{
 									fontFamily: "var(--font-display)",
 									color: "var(--color-accent-cyan)",
 								}}
 							>
-								あと {10 - queueCount}人 でマッチが成立します
+								SEARCHING FOR MATCH
 							</p>
 							<p
-								className="text-xs mt-1"
-								style={{ color: "var(--color-text-secondary)" }}
+								className="text-2xl font-bold mt-1 tabular-nums"
+								style={{
+									fontFamily: "var(--font-display)",
+									color: "var(--color-text-primary)",
+								}}
 							>
-								もう少しお待ちください
+								{formatElapsedTime(elapsedSeconds)}
 							</p>
 						</div>
-					)}
 
-					<button
-						type="button"
-						onClick={handleCancelQueue}
-						disabled={isProcessing}
-						className="mt-2 px-6 py-2.5 rounded font-semibold text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-						style={{
-							fontFamily: "var(--font-display)",
-							color: "var(--color-danger)",
-							backgroundColor: "transparent",
-							border: "1px solid var(--color-danger)",
-						}}
-						onMouseEnter={(e) => {
-							if (!isProcessing) {
-								e.currentTarget.style.backgroundColor =
-									"rgba(239, 68, 68, 0.1)";
-							}
-						}}
-						onMouseLeave={(e) => {
-							e.currentTarget.style.backgroundColor = "transparent";
-						}}
-					>
-						{isProcessing ? "CANCELING..." : "CANCEL"}
-					</button>
+						{(queueCount === 8 || queueCount === 9) && (
+							<div
+								className="rounded-lg px-4 py-3 text-center"
+								style={{
+									backgroundColor: "rgba(6, 182, 212, 0.15)",
+									border: "1px solid var(--color-accent-cyan)",
+								}}
+							>
+								<p
+									className="text-sm font-semibold"
+									style={{
+										fontFamily: "var(--font-display)",
+										color: "var(--color-accent-cyan)",
+									}}
+								>
+									あと {10 - queueCount}人 でマッチが成立します
+								</p>
+								<p
+									className="text-xs mt-1"
+									style={{ color: "var(--color-text-secondary)" }}
+								>
+									もう少しお待ちください
+								</p>
+							</div>
+						)}
+
+						<button
+							type="button"
+							onClick={handleCancelQueue}
+							disabled={isProcessing}
+							className="mt-2 px-6 py-2.5 rounded font-semibold text-sm tracking-wide transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+							style={{
+								fontFamily: "var(--font-display)",
+								color: "var(--color-danger)",
+								backgroundColor: "transparent",
+								border: "1px solid var(--color-danger)",
+							}}
+							onMouseEnter={(e) => {
+								if (!isProcessing) {
+									e.currentTarget.style.backgroundColor =
+										"rgba(239, 68, 68, 0.1)";
+								}
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.backgroundColor = "transparent";
+							}}
+						>
+							{isProcessing ? "CANCELING..." : "CANCEL"}
+						</button>
+					</div>
 				</div>
-			</div>
+
+				{/* 統計情報モーダル */}
+				{showStatsModal && statsData && (
+					<div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+						<button
+							type="button"
+							className="absolute inset-0 cursor-default"
+							style={{ backgroundColor: "rgba(2, 6, 23, 0.78)" }}
+							onClick={() => setShowStatsModal(false)}
+							aria-label="モーダルを閉じる"
+						/>
+						<div
+							className="relative w-full max-w-sm rounded-2xl p-6"
+							style={{
+								backgroundColor: "var(--color-surface)",
+								boxShadow:
+									"0 24px 60px rgba(2, 6, 23, 0.7), inset 0 1px 0 rgba(255,255,255,0.05)",
+								border: "1px solid rgba(148, 163, 184, 0.15)",
+							}}
+						>
+							<h2
+								className="text-lg font-bold tracking-wide text-center"
+								style={{
+									fontFamily: "var(--font-display)",
+									color: "var(--color-text-primary)",
+								}}
+							>
+								マッチング状況
+							</h2>
+
+							<div className="mt-5 space-y-4">
+								{/* 待機ユーザー数 */}
+								<div className="flex items-center justify-between">
+									<span
+										className="text-sm"
+										style={{ color: "var(--color-text-secondary)" }}
+									>
+										待機中のユーザー
+									</span>
+									<span
+										className="text-xl font-bold"
+										style={{
+											fontFamily: "var(--font-display)",
+											color: "var(--color-accent-cyan)",
+										}}
+									>
+										{statsData.queueCount >= 10
+											? "10人以上"
+											: `${statsData.queueCount}人`}
+									</span>
+								</div>
+
+								{/* マッチング中の試合数 */}
+								<div className="flex items-center justify-between">
+									<span
+										className="text-sm"
+										style={{ color: "var(--color-text-secondary)" }}
+									>
+										進行中の試合
+									</span>
+									<span
+										className="text-xl font-bold"
+										style={{
+											fontFamily: "var(--font-display)",
+											color: "var(--color-accent-pink)",
+										}}
+									>
+										{statsData.activeMatchCount}試合
+									</span>
+								</div>
+
+								{/* 最古のマッチング中試合の時刻 */}
+								{statsData.oldestMatchCreatedAt && (
+									<div className="flex items-center justify-between">
+										<span
+											className="text-sm"
+											style={{ color: "var(--color-text-secondary)" }}
+										>
+											最古の試合開始
+										</span>
+										<span
+											className="text-sm font-medium"
+											style={{ color: "var(--color-text-primary)" }}
+										>
+											{statsData.oldestMatchCreatedAt.toLocaleTimeString(
+												"ja-JP",
+												{
+													hour: "2-digit",
+													minute: "2-digit",
+												},
+											)}
+										</span>
+									</div>
+								)}
+							</div>
+
+							{/* 表示日時 */}
+							<p
+								className="mt-4 text-xs text-right"
+								style={{ color: "var(--color-text-secondary)" }}
+							>
+								{statsData.fetchedAt.toLocaleString("ja-JP")} 時点
+							</p>
+
+							{/* 閉じるボタン */}
+							<div className="mt-5 flex justify-center">
+								<button
+									type="button"
+									onClick={() => setShowStatsModal(false)}
+									className="px-6 py-2.5 rounded-lg text-sm font-semibold tracking-wide transition-all"
+									style={{
+										fontFamily: "var(--font-display)",
+										backgroundColor: "rgba(100, 116, 139, 0.25)",
+										color: "var(--color-text-primary)",
+										border: "1px solid rgba(100, 116, 139, 0.4)",
+									}}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.backgroundColor =
+											"rgba(100, 116, 139, 0.4)";
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.backgroundColor =
+											"rgba(100, 116, 139, 0.25)";
+									}}
+								>
+									閉じる
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
+			</>
 		);
 	}
 

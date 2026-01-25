@@ -18,7 +18,8 @@
 - インキュー開始/キャンセル
 - インキュー不可時の理由表示（受付時間外/ペナルティ）
 - マッチ成立間近メッセージ（キュー人数が8〜9人の時）
-  - 関連ファイル: `src/features/profile/HomePage.tsx`, `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`, `src/features/queue/queue.ts`
+- 統計情報モーダル（待機中5分毎に表示）
+  - 関連ファイル: `src/features/profile/HomePage.tsx`, `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`, `src/features/queue/queue.ts`, `src/features/monitor/monitor.ts`
 
 ## インキュー可否判定
 ### 1) ログイン
@@ -53,6 +54,16 @@
   - 表示条件: キュー内の待機人数が8人または9人
   - メッセージ: 「あと X人 でマッチが成立します / もう少しお待ちください」
   - 関連ファイル: `src/features/queue/components/QueueSection.tsx`, `src/features/queue/QueueContext.tsx`
+- 統計情報モーダル（5分毎）
+  - 表示タイミング: キュー参加後5分毎
+  - 表示内容:
+    - 待機中のユーザー数（10人以上の場合は「10人以上」と表示）
+    - 進行中の試合数
+    - 最古の試合開始時刻（進行中の試合がある場合のみ）
+    - モーダル表示日時
+  - 重複防止: モーダル表示中に5分経過しても新たなモーダルは表示しない
+  - 閉じる操作: 閉じるボタン、または背景クリック
+  - 関連ファイル: `src/features/queue/components/QueueSection.tsx`, `src/features/monitor/monitor.ts`
 
 ### 受付時間外
 - 受付不可メッセージ: 「18:00〜23:00 以外はマッチングを受け付けていません」
