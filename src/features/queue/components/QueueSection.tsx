@@ -407,7 +407,7 @@ export function QueueSection() {
 						</span>
 					</button>
 					<p className="text-xs text-slate-400 text-center">
-						開催時間: 18:00〜23:00
+						開催時間: 18:00〜翌2:00
 					</p>
 				</div>
 			)}

@@ -225,12 +225,12 @@ export const runMatchmakingManual = onRequest(
 });
 
 /**
- * キュー受付終了時のリセット（毎日23時JST）
+ * キュー受付終了時のリセット（毎日翌2時JST）
  * waiting 状態のユーザーを全員リセットして、システムをクリーンな状態に保つ
  */
 export const resetQueueAtClose = onSchedule(
   {
-    schedule: "0 23 * * *",
+    schedule: "0 2 * * *",
     timeZone: "Asia/Tokyo",
     region: "asia-northeast1",
     memory: "256MiB",
