@@ -48,6 +48,7 @@ export function QueueSection() {
 		fetchedAt: Date;
 	} | null>(null);
 	const showStatsModalRef = useRef(showStatsModal);
+	const lastStatsShownAtRef = useRef<number | null>(null);
 	const navigate = useNavigate();
 
 	// showStatsModalの最新値をrefで追跡
@@ -90,12 +91,23 @@ export function QueueSection() {
 		if (queueStatus !== "waiting") {
 			setShowStatsModal(false);
 			setStatsData(null);
+			lastStatsShownAtRef.current = null;
 			return;
+		}
+
+		// 初回のタイムスタンプを設定
+		if (lastStatsShownAtRef.current === null) {
+			lastStatsShownAtRef.current = Date.now();
 		}
 
 		const showStats = async () => {
 			// 既にモーダルが表示されている場合はスキップ
 			if (showStatsModalRef.current) return;
+
+			// 前回表示から5分経過しているかチェック
+			const now = Date.now();
+			const elapsed = now - (lastStatsShownAtRef.current ?? now);
+			if (elapsed < STATS_MODAL_INTERVAL_MS) return;
 
 			try {
 				const activeMatches = await fetchActiveMatches();
@@ -107,14 +119,27 @@ export function QueueSection() {
 					fetchedAt: new Date(),
 				});
 				setShowStatsModal(true);
+				lastStatsShownAtRef.current = now;
 			} catch (err) {
 				console.error("Failed to fetch stats:", err);
 			}
 		};
 
-		const intervalId = setInterval(showStats, STATS_MODAL_INTERVAL_MS);
+		// 定期チェック（1分毎）
+		const intervalId = setInterval(showStats, 60 * 1000);
 
-		return () => clearInterval(intervalId);
+		// タブがアクティブになったときにもチェック
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				showStats();
+			}
+		};
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+
+		return () => {
+			clearInterval(intervalId);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+		};
 	}, [queueStatus, queueCount]);
 
 	const handleStartQueue = async () => {
