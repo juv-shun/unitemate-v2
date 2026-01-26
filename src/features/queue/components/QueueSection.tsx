@@ -535,7 +535,7 @@ export function QueueSection() {
 						className="text-xs"
 						style={{ color: "var(--color-text-secondary)" }}
 					>
-						18:00〜23:00 以外はマッチングを受け付けていません
+						18:00〜翌2:00 以外はマッチングを受け付けていません
 					</p>
 				</div>
 			)}

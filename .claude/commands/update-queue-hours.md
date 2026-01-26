@@ -37,8 +37,11 @@ $ARGUMENTS
 
 ファイル: `src/features/queue/components/QueueSection.tsx`
 
-「開催時間: XX:XX〜XX:XX」の表示を更新する。
-- 日をまたぐ場合は「開催時間: XX:XX〜翌XX:XX」と表示
+以下の2箇所を更新する:
+1. 「開催時間: XX:XX〜XX:XX」の表示
+2. 「XX:XX〜XX:XX 以外はマッチングを受け付けていません」のメッセージ
+
+- 日をまたぐ場合は「XX:XX〜翌XX:XX」と表示
 
 ### 3. Cloud Functions - スケジュールジョブ
 
