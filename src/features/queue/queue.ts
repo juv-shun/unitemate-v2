@@ -22,11 +22,10 @@ export async function startQueue(uid: string): Promise<void> {
 	});
 }
 
-export function isQueueClosedAt(date: Date): boolean {
-	const minutes = date.getHours() * 60 + date.getMinutes();
-	// 18時〜翌2時のみ開催、それ以外（2時〜18時）は閉鎖
-	// 2時 = 120分、18時 = 1080分
-	return minutes >= 120 && minutes < 1080;
+export function isQueueClosedAt(_date: Date): boolean {
+	// const minutes = date.getHours() * 60 + date.getMinutes();
+	// サービス閉鎖中のため、常にtrueを返す
+	return true;
 }
 
 export async function cancelQueue(uid: string): Promise<void> {
